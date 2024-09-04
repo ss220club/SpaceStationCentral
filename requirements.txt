@@ -1,0 +1,5 @@
+fastapi ~= 0.112
+fastapi[standard]
+pydantic ~= 2.8.2
+sqlalchemy ~= 2.0.33
+sqlmodel
