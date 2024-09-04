@@ -10,7 +10,7 @@ class Config:
         POOL_SIZE: int = 10
         OVERFLOW: int = 5
         POOL_RECYCLE: int = 3600
-        POOl_PRE_PING: bool = True
+        POOL_PRE_PING: bool = True
 
     class General:
         PROJECT_NAME: str = "FurFur Central"

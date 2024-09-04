@@ -10,7 +10,7 @@ engine = create_async_engine(
     pool_size=db_config.POOL_SIZE,
     max_overflow=db_config.OVERFLOW,
     pool_recycle=db_config.POOL_RECYCLE,
-    pool_pre_ping=db_config.POOl_PRE_PING,
+    pool_pre_ping=db_config.POOL_PRE_PING,
     )
 
 def init_db(session: Session) -> None:
