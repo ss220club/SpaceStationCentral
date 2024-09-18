@@ -1,17 +1,8 @@
 import uuid
-from sqlmodel import Field, SQLModel
+from sqlalchemy import BigInteger, Column, Integer
+from sqlmodel import Field, Relationship, SQLModel
 
-class Player(SQLModel, table=True):
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-
-class Discord(SQLModel, table=True):
-    player_id: uuid.UUID = Field(foreign_key="player.id", primary_key=True)
-    discord_id: int = Field(unique=True)
-
-class BYONDCkey(SQLModel, table=True):
-    player_id: uuid.UUID = Field(foreign_key="player.id", primary_key=True)
-    ckey: str = Field(unique=True)
-
-class WizardsID(SQLModel, table=True):
-    player_id: uuid.UUID = Field(foreign_key="player.id", primary_key=True)
-    wiz_id: str = Field(unique=True)
+class CkeyToDiscord(SQLModel, table=True):
+    id: int = Field(default=None, primary_key=True)
+    ckey: str = Field(default=None, index=True)
+    discord_id: str = Field(default=None, index=True) # Discord id is too big for an int

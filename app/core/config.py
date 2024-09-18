@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger("main-logger")
+
 class Config:
     class Database:
         ENGINE = "postgresql+psycopg2"
@@ -13,8 +16,20 @@ class Config:
         POOL_PRE_PING: bool = True
 
         NEEDS_REBUILD: bool = True
+    
+    class Secrets:
+        OAuthSecret: str = "12345678"
 
     class General:
         PROJECT_NAME: str = "FurFur Central"
         PROJECT_DESC: str = "API для объеденения множества серверов SS13 и SS14 в одну систему."
         PROJECT_VER: str = "0.0.1"
+
+
+try:
+    with open(".prod_config.py") as f:
+        logger.info("Using .prod_config.py")
+        exec(f.read())
+
+except FileNotFoundError:
+    logger.info("Using default config")

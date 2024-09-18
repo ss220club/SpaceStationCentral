@@ -1,6 +1,8 @@
 __pycache__
+.pytest_cache
 .vscode
 .venv
 .env
 *.log
 .idea
+.prod_config.py
