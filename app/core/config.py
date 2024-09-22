@@ -17,13 +17,16 @@ class Config:
 
         NEEDS_REBUILD: bool = True
     
-    class Secrets:
-        OAuthSecret: str = "12345678"
+    class Oauth:
+        CLEINT_SECRET: str = "12345678"
+        CLIENT_ID: int = 12345678
+        STATE_SECRET: str = "12345678"
 
     class General:
         PROJECT_NAME: str = "FurFur Central"
         PROJECT_DESC: str = "API для объеденения множества серверов SS13 и SS14 в одну систему."
         PROJECT_VER: str = "0.0.1"
+        ENDPOINT_URL: str = "http://127.0.0.1:8000"
 
 
 try:

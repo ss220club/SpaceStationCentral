@@ -3,12 +3,10 @@ import string
 import uuid
 import pytest
 from fastapi.testclient import TestClient
-from fastapi import status
 from sqlmodel import Session
 
 from app.main import app
 from app.core.db import engine
-from app.database.models import DiscordLink, Player
 
 @pytest.fixture(scope="module")
 def client():
@@ -36,5 +34,3 @@ def discord_id2():
 def ckey():
     ckey = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
     yield ckey
-
-
