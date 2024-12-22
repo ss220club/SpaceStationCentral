@@ -10,7 +10,7 @@ from app.fur_discord import DiscordOAuthClient
 
 from app.core.config import Config
 from app.database.models import OneTimeToken, Player
-from app.deps import SessionDep
+from app.deps import SessionDep, BearerDep
 
 router = APIRouter(prefix="/player", tags=["Player"])
 
@@ -18,13 +18,6 @@ CALLBACK_PATH = "/discord_oa"
 oauth_client = DiscordOAuthClient(
     Config.Oauth.CLIENT_ID, Config.Oauth.CLEINT_SECRET, f"{Config.General.ENDPOINT_URL}{router.prefix}{CALLBACK_PATH}"
 )
-
-@router.get("/login", status_code=status.HTTP_307_TEMPORARY_REDIRECT)
-async def login(token: str) -> RedirectResponse:
-    """
-    Redirects to the discord oauth2 login page with the given ckey and state token
-    """
-    return RedirectResponse(oauth_client.get_oauth_login_url(token))
 
 def get_token_by_ckey(session: Session, ckey: str) -> str:
     token_entry = session.exec(select(OneTimeToken).where(OneTimeToken.ckey == ckey)).first()
@@ -58,12 +51,20 @@ def is_state_valid(session: Session, token: str):
         return False
     return True
 
+@router.get("/login", status_code=status.HTTP_307_TEMPORARY_REDIRECT)
+async def login(token: str) -> RedirectResponse:
+    """
+    Redirects to the discord oauth2 login page with the given ckey and state token
+    """
+    return RedirectResponse(oauth_client.get_oauth_login_url(token))
+
 @router.get("/token/{ckey}")
-async def generate_state(session: SessionDep, ckey: str):
+async def generate_state(session: SessionDep, bearer: BearerDep, ckey: str):
     """
     Generates a state token for the given ckey and returns it. The state token
     is used to validate the authorization flow.
     """
+    logger.info("%s", bearer)
     token = get_token_by_ckey(session, ckey)
     return token
 

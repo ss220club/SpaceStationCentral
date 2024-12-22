@@ -30,3 +30,7 @@ class WhitelistBan(SQLModel, table=True):
     issue_time: datetime = Field(default_factory=datetime.now)
     duration: timedelta = Field(default=timedelta(days=14))
     active: bool = Field(default=True)
+
+class Auth(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    token_hash: str = Field(unique=True, index=True)
