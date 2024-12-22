@@ -40,17 +40,21 @@ async def callback(session: SessionDep, code: str, state: str):
     discord_token, _ = await oauth_client.get_access_token(code)
     ckey, token = state.split(" ")
     if not is_state_valid(ckey, token):
+        logger.debug(f"Got invalid auth state: {state}")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Spoofed or invalid state")
     user = await oauth_client.get_user(discord_token)
     discord_id = user.id
 
     if session.exec(select(CkeyToDiscord).where(CkeyToDiscord.ckey == ckey or CkeyToDiscord.discord_id == discord_id)).first() is not None:
+        logger.debug(f"Player already linked and tried to link: {ckey} {discord_id}")
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Player already linked")
 
     link = CkeyToDiscord(ckey=ckey, discord_id=discord_id)
     session.add(link)
     session.commit()
     session.refresh(link)
+
+    logger.info(f"Linked {link.ckey} to {link.discord_id}")
 
     return link
 
