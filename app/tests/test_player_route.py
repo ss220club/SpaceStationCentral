@@ -1,6 +1,5 @@
 import random
 import string
-import uuid
 import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import Session
@@ -22,15 +21,15 @@ def db_session():
 
 @pytest.fixture(scope="function")
 def discord_id():
-    discord_id = random.randint(100000000000000000, 999999999999999999)
-    yield discord_id
+    d_id = random.randint(100000000000000000, 999999999999999999)
+    yield d_id
 
 @pytest.fixture(scope="function")
 def discord_id2():
-    discord_id = random.randint(100000000000000000, 999999999999999999)
-    yield discord_id
+    d_id = random.randint(100000000000000000, 999999999999999999)
+    yield d_id
 
 @pytest.fixture(scope="function")
 def ckey():
-    ckey = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
-    yield ckey
+    new_ckey = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
+    yield new_ckey

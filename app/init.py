@@ -1,7 +1,3 @@
-import logging
-
-from sqlmodel.ext.asyncio.session import AsyncSession
-
 from app.core.db import init_db
 
 def init() -> None:

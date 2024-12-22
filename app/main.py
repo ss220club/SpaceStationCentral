@@ -2,7 +2,6 @@ from logging.config import dictConfig
 from app.core.logconfig import log_config
 dictConfig(log_config)
 
-import fastapi
 from fastapi import FastAPI, status
 from fastapi.concurrency import asynccontextmanager
 from fastapi.responses import FileResponse
@@ -14,7 +13,7 @@ from app.routes.player import router as player_router
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(_: FastAPI):
     init()
     yield
 

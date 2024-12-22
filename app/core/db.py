@@ -1,5 +1,4 @@
-from sqlmodel import SQLModel, Session, create_engine
-import app.database.models
+from sqlmodel import SQLModel, create_engine
 from app.core.config import Config
 
 db_config = Config.Database
@@ -9,7 +8,7 @@ engine = create_engine(
     pool_size=db_config.POOL_SIZE,
     max_overflow=db_config.OVERFLOW,
     pool_recycle=db_config.POOL_RECYCLE,
-    pool_pre_ping=db_config.POOL_PRE_PING,  
+    pool_pre_ping=db_config.POOL_PRE_PING,
     )
 
 def init_db() -> None:

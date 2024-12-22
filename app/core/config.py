@@ -1,6 +1,7 @@
 import logging
 logger = logging.getLogger("main-logger")
 
+# pylint: disable=R0903
 class Config:
     class Database:
         ENGINE = "postgresql+psycopg2"
@@ -16,7 +17,7 @@ class Config:
         POOL_PRE_PING: bool = True
 
         NEEDS_REBUILD: bool = True
-    
+
     class Oauth:
         CLEINT_SECRET: str = "12345678"
         CLIENT_ID: int = 12345678
@@ -32,9 +33,9 @@ class Config:
 
 
 try:
-    with open(".prod_config.py") as f:
+    with open(".prod_config.py", "r", encoding="utf-8") as f:
         logger.info("Using .prod_config.py")
-        exec(f.read())
+        exec(f.read()) # pylint: disable=exec-used
 
 except FileNotFoundError:
     logger.info("Using default config")

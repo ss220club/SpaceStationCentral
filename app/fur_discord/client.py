@@ -56,19 +56,20 @@ class DiscordOAuthClient:
 
     @cached(ttl=550)
     async def request(self, route, token=None, method='GET'):
-        if token:
-            headers = {
-                "Authorization": f'Bearer {token}'
-            }
+        headers = {
+            "Authorization": f'Bearer {token if token else ""}'
+        }
         resp = None
         if method == 'GET':
             async with aiohttp.ClientSession() as session:
                 resp = await session.get(f'{DISCORD_API_URL}{route}', headers=headers)
                 data = await resp.json()
-        if method == 'POST':
+        elif method == 'POST':
             async with aiohttp.ClientSession() as session:
                 resp = await session.post(f'{DISCORD_API_URL}{route}', headers=headers)
                 data = await resp.json()
+        else:
+            raise ValueError(f"Method {method} not supported")
         if resp.status == 401:
             raise Unauthorized
         if resp.status == 429:
