@@ -28,6 +28,7 @@ class Config:
         PROJECT_DESC: str = "API для объеденения множества серверов SS13 и SS14 в одну систему."
         PROJECT_VER: str = "0.0.1"
         ENDPOINT_URL: str = "http://127.0.0.1:8000"
+        FAVICON_PATH: str = "app/assets/favicon.png"
 
 
 try:

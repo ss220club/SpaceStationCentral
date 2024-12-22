@@ -23,7 +23,6 @@ app = FastAPI(
     version=Config.General.PROJECT_VER,
     description=Config.General.PROJECT_DESC,
     lifespan=lifespan)
-favicon_path = "app/assets/favicon.png"
 
 app.include_router(player_router)
 
@@ -36,4 +35,4 @@ async def root() -> dict:
 
 @app.get("/favicon.ico", include_in_schema=False)
 async def favicon():
-    return FileResponse(favicon_path)
+    return FileResponse(Config.General.FAVICON_PATH)
