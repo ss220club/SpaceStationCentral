@@ -5,8 +5,8 @@ class Config:
     class Database:
         ENGINE = "postgresql+psycopg2"
         NAME: str = "central"
-        USER: str = "furior"
-        PASSWORD: str = "12345678"
+        USER: str = "root"
+        PASSWORD: str = "root"
         HOST: str = "127.0.0.1"
         PORT: int = 5432
 
@@ -20,6 +20,7 @@ class Config:
     class Oauth:
         CLEINT_SECRET: str = "12345678"
         CLIENT_ID: int = 12345678
+        # Bandaid to ensure that the state is valid.
         STATE_SECRET: str = "12345678"
 
     class General:
