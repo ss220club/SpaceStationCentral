@@ -8,7 +8,7 @@ from sqlmodel import Session
 
 from app.database.models import Auth, Player
 from app.main import app
-from app.core.db import engine
+from app.core.db import engine, init_db
 
 @pytest.fixture(scope="module")
 def client():
@@ -18,6 +18,8 @@ def client():
 
 @pytest.fixture(scope="module")
 def db_session():
+    init_db()
+
     with Session(engine) as session:
         yield session
 
@@ -61,7 +63,7 @@ def test_create_token(client, db_session, ckey):
     response = client.get(f"/player/token/{ckey}", headers={"Authorization": f"Bearer {fake_token}"})
     assert response.status_code == 401
 
-    token = "12345678"
+    token = str(random.randint(10000000, 99999999))
     token_hash = hashlib.sha256(token.encode()).hexdigest()
 
     auth = Auth(token_hash=token_hash)
