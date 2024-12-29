@@ -1,10 +1,11 @@
 from datetime import datetime, timedelta
 from secrets import token_urlsafe
+from pydantic import field_serializer, field_validator
 from sqlmodel import Field, SQLModel
 
 class Player(SQLModel, table=True):
-    id: int | None = Field(default=None, primary_key=True)
-    discord_id: str = Field(unique=True, index=True)
+    # Actually is a pretty big int. Is way **too** big for a lot of software to handle
+    discord_id: str = Field(primary_key=True)
     ckey: str = Field(unique=True, index=True)
 
 class OneTimeToken(SQLModel, table=True):
@@ -15,21 +16,21 @@ class OneTimeToken(SQLModel, table=True):
 
 class Whitelist(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
-    player_id: int = Field(foreign_key="player.id", index=True)
+    player_id: str = Field(foreign_key="player.discord_id", index=True)
     type: str
-    admin_id: int = Field(foreign_key="player.id")
-    issue_time: datetime = Field(default_factory=datetime.now)
-    duration: timedelta = Field(default=timedelta(days=30))
-    active: bool = Field(default=True)
+    admin_id: str = Field(foreign_key="player.discord_id")
+    issue_time: datetime | None = Field(default_factory=datetime.now)
+    duration: timedelta | None = Field(default=timedelta(days=30))
+    valid: bool | None = Field(default=True)
 
 class WhitelistBan(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
-    player_id: int = Field(foreign_key="player.id", index=True)
+    player_id: str = Field(foreign_key="player.discord_id", index=True)
     type: str
-    admin_id: int = Field(foreign_key="player.id")
-    issue_time: datetime = Field(default_factory=datetime.now)
-    duration: timedelta = Field(default=timedelta(days=14))
-    active: bool = Field(default=True)
+    admin_id: str = Field(foreign_key="player.discord_id")
+    issue_time: datetime | None = Field(default_factory=datetime.now)
+    duration: timedelta | None = Field(default=timedelta(days=14))
+    valid: bool | None = Field(default=True)
 
 class Auth(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)

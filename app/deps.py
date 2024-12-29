@@ -14,7 +14,7 @@ def get_session() -> Generator[Session, None, None]:
 SessionDep = Annotated[Session, Depends(get_session)]
 
 bearer_scheme = HTTPBearer()
-def verify_bearer_in_db(
+def verify_bearer(
     credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
     session: Session = Depends(get_session),
 ) -> str:
@@ -35,5 +35,3 @@ def verify_bearer_in_db(
             headers={"WWW-Authenticate": "Bearer"}
         )
     return token
-
-BearerDep = Annotated[str, Depends(verify_bearer_in_db)]

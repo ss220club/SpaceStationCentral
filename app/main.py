@@ -9,6 +9,7 @@ from fastapi.responses import FileResponse
 from app.core.config import Config
 from app.init import init
 from app.routes.player import router as player_router
+from app.routes.whitelist import router as whitelist_router
 
 
 
@@ -24,6 +25,7 @@ app = FastAPI(
     lifespan=lifespan)
 
 app.include_router(player_router)
+app.include_router(whitelist_router)
 
 @app.get("/", status_code=status.HTTP_418_IM_A_TEAPOT)
 async def root() -> dict:

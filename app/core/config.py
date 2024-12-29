@@ -4,7 +4,7 @@ logger = logging.getLogger("main-logger")
 # pylint: disable=R0903
 class Config:
     class Database:
-        ENGINE = "postgresql+psycopg2"
+        ENGINE: str = "postgresql+psycopg2"
         NAME: str = "central"
         USER: str = "root"
         PASSWORD: str = "root"
@@ -19,10 +19,9 @@ class Config:
         NEEDS_REBUILD: bool = True
 
     class Oauth:
+        # From discord app's settings
         CLEINT_SECRET: str = "12345678"
         CLIENT_ID: int = 12345678
-        # Bandaid to ensure that the state is valid.
-        STATE_SECRET: str = "12345678"
 
     class General:
         PROJECT_NAME: str = "FurFur Central"

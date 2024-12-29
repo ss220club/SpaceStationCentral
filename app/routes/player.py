@@ -2,7 +2,7 @@ import datetime
 import logging
 logger = logging.getLogger("main-logger")
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi import status
 from fastapi.responses import RedirectResponse
 from sqlmodel import Session, select
@@ -10,7 +10,7 @@ from app.fur_discord import DiscordOAuthClient
 
 from app.core.config import Config
 from app.database.models import OneTimeToken, Player
-from app.deps import SessionDep, BearerDep
+from app.deps import SessionDep, verify_bearer
 
 router = APIRouter(prefix="/player", tags=["Player"])
 
@@ -20,6 +20,9 @@ oauth_client = DiscordOAuthClient(
 )
 
 def get_token_by_ckey(session: Session, ckey: str) -> str:
+    """
+    If token already exists, makes sure that its valid, if not - regenerates it. If token doesnt exist - generates it.
+    """
     token_entry = session.exec(select(OneTimeToken).where(OneTimeToken.ckey == ckey)).first()
     if token_entry is None:
         token_entry = OneTimeToken(ckey=ckey)
@@ -42,7 +45,7 @@ def get_token_owner(session: Session, token: str) -> str:
     """
     return session.exec(select(OneTimeToken).where(OneTimeToken.token == token)).first().ckey
 
-def is_state_valid(session: Session, token: str):
+def is_token_valid(session: Session, token: str):
     """
     Checks if the given state token is valid for the given ckey.
     """
@@ -58,13 +61,12 @@ async def login(token: str) -> RedirectResponse:
     """
     return RedirectResponse(oauth_client.get_oauth_login_url(token))
 
-@router.get("/token/{ckey}")
-async def generate_state(session: SessionDep, bearer: BearerDep, ckey: str):
+@router.post("/token/{ckey}", status_code=status.HTTP_201_CREATED, dependencies=[Depends(verify_bearer)])
+async def generate_state(session: SessionDep, ckey: str) -> str:
     """
     Generates a state token for the given ckey and returns it. The state token
     is used to validate the authorization flow.
     """
-    logger.info("%s", bearer)
     token = get_token_by_ckey(session, ckey)
     return token
 
@@ -81,9 +83,11 @@ async def callback(session: SessionDep, code: str, state: str) -> Player:
     """
     discord_token, _ = await oauth_client.get_access_token(code)
     token = state
-    if not is_state_valid(session, token):
+    if not is_token_valid(session, token):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Wrong or expired token")
     ckey = get_token_owner(session, token)
+    if ckey is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Wrong or expired token")
     user = await oauth_client.get_user(discord_token)
     discord_id = user.id
 
@@ -102,7 +106,7 @@ async def callback(session: SessionDep, code: str, state: str) -> Player:
 
 
 @router.get("/ckey/{ckey}")
-async def get_player_by_ckey(session: SessionDep, ckey: str):
+async def get_player_by_ckey(session: SessionDep, ckey: str) -> Player:
     """
     Retrieves a player by their ckey.
     """
@@ -113,7 +117,7 @@ async def get_player_by_ckey(session: SessionDep, ckey: str):
     return player
 
 @router.get("/discord/{discord_id}")
-async def get_player_by_discord(session: SessionDep, discord_id: str):
+async def get_player_by_discord(session: SessionDep, discord_id: str) -> Player:
     """
     Retrieves a player by their discord ID.
     """
