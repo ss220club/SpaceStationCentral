@@ -1,5 +1,8 @@
 from datetime import datetime, timedelta
-from pydantic import BaseModel, field_serializer, field_validator, Field
+
+from pydantic import BaseModel, Field, field_serializer, field_validator
+
+
 class NewWhitelist(BaseModel):
     player_id: str
     type: str
@@ -7,6 +10,7 @@ class NewWhitelist(BaseModel):
     issue_time: datetime | None = Field(default_factory=datetime.now)
     duration: timedelta | None = timedelta(days=30)
     valid: bool | None = True
+
     @field_validator("issue_time")
     @classmethod
     def parse_issue_time(cls, issue_time: str | datetime) -> datetime:
@@ -18,7 +22,7 @@ class NewWhitelist(BaseModel):
     @field_serializer("issue_time", when_used="json")
     @classmethod
     def serialize_issue_time(cls, issue_time: datetime) -> str:
-        
+
         return issue_time.isoformat()
 
     @field_validator("duration")
@@ -30,7 +34,7 @@ class NewWhitelist(BaseModel):
         if duration < 0:
             raise ValueError("Duration must be a non-negative integer.")
         return timedelta(seconds=duration)
-    
+
     @field_serializer("duration", when_used="json")
     @classmethod
     def serialize_duration(cls, duration_secs: timedelta) -> float:

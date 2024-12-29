@@ -1,13 +1,14 @@
-from typing import Optional, List
+from typing import List, Optional
 
 import aiohttp
-from fastapi import Request, Depends
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-
-from .models import User, Guild, GuildPreview
-from .config import DISCORD_API_URL, DISCORD_TOKEN_URL, DISCORD_OAUTH_AUTHENTICATION_URL
-from .exeptions import Unauthorized, RateLimited, ScopeMissing
 from aiocache import cached
+from fastapi import Depends, Request
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+
+from .config import (DISCORD_API_URL, DISCORD_OAUTH_AUTHENTICATION_URL,
+                     DISCORD_TOKEN_URL)
+from .exeptions import RateLimited, ScopeMissing, Unauthorized
+from .models import Guild, GuildPreview, User
 
 
 class DiscordOAuthClient:
@@ -41,8 +42,8 @@ class DiscordOAuthClient:
         scopes = f'scope={self.scopes}'
         response_type = 'response_type=code'
         return f'{DISCORD_OAUTH_AUTHENTICATION_URL}?{client_id}&{redirect_uri}&{scopes}&{response_type}'
-    
-    def get_oauth_login_url(self, state: str|None):
+
+    def get_oauth_login_url(self, state: str | None):
         """
 
         Returns a Discord Login URL with state
@@ -52,7 +53,7 @@ class DiscordOAuthClient:
         redirect_uri = f'redirect_uri={self.redirect_uri}'
         scopes = f'scope={self.scopes}'
         response_type = 'response_type=code'
-        return f'{DISCORD_OAUTH_AUTHENTICATION_URL}?{client_id}&{redirect_uri}&{scopes}&{response_type}{"&state=" + state if state else ""}'    
+        return f'{DISCORD_OAUTH_AUTHENTICATION_URL}?{client_id}&{redirect_uri}&{scopes}&{response_type}&state={state or """"""}'
 
     @cached(ttl=550)
     async def request(self, route, token=None, method='GET'):
@@ -108,7 +109,7 @@ class DiscordOAuthClient:
         route = '/users/@me'
         token = self.get_token(request)
         return User(**(await self.request(route, token)))
-    
+
     async def get_user(self, token: str):
         route = '/users/@me'
         response = await self.request(route, token)
@@ -127,13 +128,12 @@ class DiscordOAuthClient:
         if not authorization_header:
             raise Unauthorized
         authorization_header = authorization_header.split(" ")
-        if not authorization_header[0] == "Bearer" or len(authorization_header) > 2:
+        if authorization_header[0] != "Bearer" or len(authorization_header) != 2:
             raise Unauthorized
 
-        token = authorization_header[1]
-        return token
+        return authorization_header[1]
 
-    async def isAuthenticated(self, token: str):
+    async def is_auntheficated(self, token: str):
         route = '/oauth2/@me'
         try:
             await self.request(route, token)
@@ -142,5 +142,5 @@ class DiscordOAuthClient:
             return False
 
     async def requires_authorization(self, bearer: Optional[HTTPAuthorizationCredentials] = Depends(HTTPBearer())):
-        if not await self.isAuthenticated(bearer.credentials):
+        if not await self.is_auntheficated(bearer.credentials):
             raise Unauthorized

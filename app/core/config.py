@@ -1,7 +1,10 @@
 import logging
+
 logger = logging.getLogger("main-logger")
 
 # pylint: disable=R0903
+
+
 class Config:
     class Database:
         ENGINE: str = "postgresql+psycopg2"
@@ -34,7 +37,7 @@ class Config:
 try:
     with open(".prod_config.py", "r", encoding="utf-8") as f:
         logger.info("Using .prod_config.py")
-        exec(f.read()) # pylint: disable=exec-used
+        exec(f.read())  # pylint: disable=exec-used
 
 except FileNotFoundError:
     logger.info("Using default config")

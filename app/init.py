@@ -1,5 +1,6 @@
 from app.core.db import init_db
 
+
 def init() -> None:
     init_db()
 

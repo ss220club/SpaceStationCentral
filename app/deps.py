@@ -1,5 +1,6 @@
 import hashlib
 from typing import Annotated, Generator
+
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlmodel import Session, select
@@ -7,13 +8,17 @@ from sqlmodel import Session, select
 from app.core.db import engine
 from app.database.models import Auth
 
+
 def get_session() -> Generator[Session, None, None]:
     with Session(engine) as session:
         yield session
 
+
 SessionDep = Annotated[Session, Depends(get_session)]
 
 bearer_scheme = HTTPBearer()
+
+
 def verify_bearer(
     credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
     session: Session = Depends(get_session),
@@ -26,11 +31,12 @@ def verify_bearer(
     token = credentials.credentials
 
     hashed_token = hashlib.sha256(token.encode()).hexdigest()
-    token_entry = session.exec(select(Auth).where(Auth.token_hash == hashed_token)).first()
+    token_entry = session.exec(select(Auth).where(
+        Auth.token_hash == hashed_token)).first()
 
     if not token_entry:
         raise HTTPException(
-            status_code=401, 
+            status_code=401,
             detail="Invalid or missing bearer token",
             headers={"WWW-Authenticate": "Bearer"}
         )

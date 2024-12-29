@@ -1,16 +1,16 @@
 from logging.config import dictConfig
-from app.core.logconfig import log_config
-dictConfig(log_config)
 
 from fastapi import FastAPI, status
 from fastapi.concurrency import asynccontextmanager
 from fastapi.responses import FileResponse
 
 from app.core.config import Config
+from app.core.logconfig import log_config
 from app.init import init
 from app.routes.player import router as player_router
 from app.routes.whitelist import router as whitelist_router
 
+dictConfig(log_config)
 
 
 @asynccontextmanager
@@ -27,12 +27,14 @@ app = FastAPI(
 app.include_router(player_router)
 app.include_router(whitelist_router)
 
+
 @app.get("/", status_code=status.HTTP_418_IM_A_TEAPOT)
 async def root() -> dict:
     """
     Hello! This is the root of the API. It's teapot-flavored.
     """
     return {"message": "I'm a teapot"}
+
 
 @app.get("/favicon.ico", include_in_schema=False)
 async def favicon():
