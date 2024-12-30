@@ -44,18 +44,17 @@ async def get_whitelist_by_discord(session: SessionDep, discord_id: str, valid: 
     return result.all()
 
 @router.post("/ban", dependencies=[Depends(verify_bearer)], status_code=status.HTTP_201_CREATED)
-def ban_whitelist(session: SessionDep, wl: Whitelist, invalidate_old_wls: bool = True) -> WhitelistBan:
-    ban = WhitelistBan(player_id=wl.player_id, type=wl.type, admin_id=wl.admin_id, duration=wl.duration)
+def ban_whitelist(session: SessionDep, ban: WhitelistBan, invalidate_old_wls: bool = True) -> WhitelistBan:
     session.add(ban)
     if invalidate_old_wls:
-        old_wls = session.exec(select(Whitelist).where(Whitelist.player_id == wl.player_id)).all()
+        old_wls = session.exec(select(Whitelist).where(Whitelist.player_id == ban.player_id)).all()
         for old_wl in old_wls:
             old_wl.valid = False
         session.add_all(old_wls)
 
     session.commit()
-    session.refresh(wl)
-    return wl
+    session.refresh(ban)
+    return ban
 
 @router.get("/ban/discord/{discord_id}", status_code=status.HTTP_200_OK)
 async def get_whitelist_bans_by_discord(session: SessionDep, discord_id: str, only_active: bool = True) -> list[WhitelistBan]:

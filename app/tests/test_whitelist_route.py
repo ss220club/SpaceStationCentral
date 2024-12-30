@@ -1,5 +1,6 @@
 # pylint: disable=redefined-outer-name
-from app.database.models import Player, Whitelist
+from sqlmodel import select
+from app.database.models import Player, Whitelist, WhitelistBan
 from app.tests.fixtures import (bearer, ckey,  # pylint: disable=unused-import
                                 ckey2, client, db_session, discord_id,
                                 discord_id2, duration_days)
@@ -49,11 +50,16 @@ def test_post_whitelist_ban(client, db_session, bearer, discord_id, discord_id2,
 
     wl = Whitelist(player_id=discord_id, type="test",
                    admin_id=discord_id2, duration=duration_days)
+    db_session.add(wl)
+    db_session.commit()
 
-    response = client.post("/whitelist", json=wl.model_dump(mode="json"),
+    wl_ban = WhitelistBan(player_id=discord_id, type="test",
+                   admin_id=discord_id2, duration=duration_days)
+
+    response = client.post("/whitelist/ban", json=wl_ban.model_dump(mode="json"),
                            headers={"Authorization": f"Bearer {bearer}"})
     assert response.status_code == 201
 
-
-
+    wl = db_session.exec(select(Whitelist).where(Whitelist.player_id == discord_id)).first()
+    assert wl.valid == False
     
