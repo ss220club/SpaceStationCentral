@@ -56,7 +56,7 @@ async def is_token_valid(session: Session, token: str):
     Checks if the given state token is valid for the given ckey.
     """
     token_entry = session.exec(select(OneTimeToken).where(
-        OneTimeToken.token == token and OneTimeToken.expiry > datetime.datetime.now())).first()
+        OneTimeToken.token == token).where(OneTimeToken.expiry > datetime.datetime.now())).first()
     return token_entry is not None
 
 
