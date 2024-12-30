@@ -14,7 +14,7 @@ router = APIRouter(prefix="/whitelist", tags=["Whitelist"])
 
 
 @router.post("/", dependencies=[Depends(verify_bearer)], status_code=status.HTTP_201_CREATED)
-def create_whitelist(session: SessionDep, wl: Whitelist, ignore_bans: bool = False) -> Whitelist:
+async def create_whitelist(session: SessionDep, wl: Whitelist, ignore_bans: bool = False) -> Whitelist:
     if not ignore_bans:
         bans = session.exec(select(WhitelistBan).where(
             WhitelistBan.player_id == wl.player_id
@@ -44,7 +44,7 @@ async def get_whitelist_by_discord(session: SessionDep, discord_id: str, valid: 
     return result.all()
 
 @router.post("/ban", dependencies=[Depends(verify_bearer)], status_code=status.HTTP_201_CREATED)
-def ban_whitelist(session: SessionDep, ban: WhitelistBan, invalidate_old_wls: bool = True) -> WhitelistBan:
+async def ban_whitelist(session: SessionDep, ban: WhitelistBan, invalidate_old_wls: bool = True) -> WhitelistBan:
     session.add(ban)
     if invalidate_old_wls:
         old_wls = session.exec(select(Whitelist).where(Whitelist.player_id == ban.player_id)).all()
@@ -63,3 +63,14 @@ async def get_whitelist_bans_by_discord(session: SessionDep, discord_id: str, on
         and WhitelistBan.valid == only_active
         and WhitelistBan.issue_time + WhitelistBan.duration > datetime.datetime.now()))
     return result.all()
+
+@router.patch("/ban", dependencies=[Depends(verify_bearer)], status_code=status.HTTP_202_ACCEPTED)
+async def pardon_whitelist_ban(session: SessionDep, ban_id: int) -> WhitelistBan:
+    db_ban = session.exec(select(WhitelistBan).where(WhitelistBan.id == ban_id)).first()
+    if db_ban is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ban not found")
+    db_ban.valid = False
+    session.add(db_ban)
+    session.commit()
+    session.refresh(db_ban)
+    return db_ban

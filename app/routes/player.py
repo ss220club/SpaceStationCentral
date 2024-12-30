@@ -22,7 +22,7 @@ oauth_client = DiscordOAuthClient(
 )
 
 
-def get_token_by_ckey(session: Session, ckey: str) -> str:
+async def get_token_by_ckey(session: Session, ckey: str) -> str:
     """
     If token already exists, makes sure that its valid, if not - regenerates it. If token doesnt exist - generates it.
     """
@@ -44,22 +44,20 @@ def get_token_by_ckey(session: Session, ckey: str) -> str:
     return token_entry.token
 
 
-def get_token_owner(session: Session, token: str) -> str:
+async def get_token_owner(session: Session, token: str) -> str:
     """
     Assumes that the token is valid
     """
     return session.exec(select(OneTimeToken).where(OneTimeToken.token == token)).first().ckey
 
 
-def is_token_valid(session: Session, token: str):
+async def is_token_valid(session: Session, token: str):
     """
     Checks if the given state token is valid for the given ckey.
     """
     token_entry = session.exec(select(OneTimeToken).where(
         OneTimeToken.token == token and OneTimeToken.expiry > datetime.datetime.now())).first()
-    if token_entry is None:
-        return False
-    return True
+    return token_entry is not None
 
 
 @router.get("/login", status_code=status.HTTP_307_TEMPORARY_REDIRECT)
@@ -76,8 +74,7 @@ async def generate_state(session: SessionDep, ckey: str) -> str:
     Generates a state token for the given ckey and returns it. The state token
     is used to validate the authorization flow.
     """
-    token = get_token_by_ckey(session, ckey)
-    return token
+    return await get_token_by_ckey(session, ckey)
 
 
 @router.get(CALLBACK_PATH)
@@ -96,7 +93,7 @@ async def callback(session: SessionDep, code: str, state: str) -> Player:
     if not is_token_valid(session, token):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Wrong or expired token")
-    ckey = get_token_owner(session, token)
+    ckey = await get_token_owner(session, token)
     if ckey is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Wrong or expired token")

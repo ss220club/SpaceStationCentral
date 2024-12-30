@@ -62,3 +62,21 @@ def test_post_whitelist_ban(client, db_session, bearer, discord_id, discord_id2,
     # Make sure old wls detonate
     wl = db_session.exec(select(Whitelist).where(Whitelist.player_id == discord_id)).first()
     assert not wl.valid
+
+def test_pardon_whitelist_ban(client, db_session, bearer, discord_id, discord_id2, ckey, ckey2, duration_days):
+    player = Player(ckey=ckey, discord_id=discord_id)
+    admin = Player(ckey=ckey2, discord_id=discord_id2)
+    db_session.add_all([player, admin])
+    db_session.commit()
+
+    wl_ban = WhitelistBan(player_id=discord_id, type="test",
+                   admin_id=discord_id2, duration=duration_days)
+    db_session.add(wl_ban)
+    db_session.commit()
+    db_session.refresh(wl_ban)
+
+    response = client.patch(f"/whitelist/ban?ban_id={wl_ban.id}", headers={"Authorization": f"Bearer {bearer}"})
+    assert response.status_code == 202
+
+    db_session.refresh(wl_ban)
+    assert not wl_ban.valid
