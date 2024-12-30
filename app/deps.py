@@ -33,11 +33,10 @@ def verify_bearer(
     hashed_token = hashlib.sha256(token.encode()).hexdigest()
     if session.exec(
         select(Auth).where(Auth.token_hash == hashed_token)
-    ).first() is not None:
-        return token
-    else:
+    ).first() is None:
         raise HTTPException(
             status_code=401,
             detail="Invalid or missing bearer token",
             headers={"WWW-Authenticate": "Bearer"}
         )
+    return token
