@@ -8,3 +8,5 @@ aiohttp
 aiocache
 pytest
 pylint
+pytest-mock
+pytest-asyncio

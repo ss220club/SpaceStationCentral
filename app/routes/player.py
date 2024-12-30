@@ -90,7 +90,7 @@ async def callback(session: SessionDep, code: str, state: str) -> Player:
     """
     discord_token, _ = await oauth_client.get_access_token(code)
     token = state
-    if not is_token_valid(session, token):
+    if not await is_token_valid(session, token):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Wrong or expired token")
     ckey = await get_token_owner(session, token)

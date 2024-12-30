@@ -31,13 +31,13 @@ def verify_bearer(
     token = credentials.credentials
 
     hashed_token = hashlib.sha256(token.encode()).hexdigest()
-    token_entry = session.exec(select(Auth).where(
-        Auth.token_hash == hashed_token)).first()
-
-    if not token_entry:
+    if session.exec(
+        select(Auth).where(Auth.token_hash == hashed_token)
+    ).first() is not None:
+        return token
+    else:
         raise HTTPException(
             status_code=401,
             detail="Invalid or missing bearer token",
             headers={"WWW-Authenticate": "Bearer"}
         )
-    return token
