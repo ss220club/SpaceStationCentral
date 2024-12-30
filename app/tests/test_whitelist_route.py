@@ -59,7 +59,6 @@ def test_post_whitelist_ban(client, db_session, bearer, discord_id, discord_id2,
     response = client.post("/whitelist/ban", json=wl_ban.model_dump(mode="json"),
                            headers={"Authorization": f"Bearer {bearer}"})
     assert response.status_code == 201
-
+    # Make sure old wls detonate
     wl = db_session.exec(select(Whitelist).where(Whitelist.player_id == discord_id)).first()
-    assert wl.valid == False
-    
+    assert not wl.valid

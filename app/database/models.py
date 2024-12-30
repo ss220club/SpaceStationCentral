@@ -33,6 +33,7 @@ class Whitelist(WhitelistBase, table=True):
 
 class WhitelistBan(WhitelistBase, table=True):
     duration: timedelta | None = Field(default=timedelta(days=14))
+    reason: str | None = Field()
 
 class Auth(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)

@@ -18,7 +18,7 @@ def create_whitelist(session: SessionDep, wl: Whitelist, ignore_bans: bool = Fal
     if not ignore_bans:
         bans = session.exec(select(WhitelistBan).where(
             WhitelistBan.player_id == wl.player_id
-            and WhitelistBan.valid == True
+            and WhitelistBan.valid is True
             and WhitelistBan.type == wl.type
             and WhitelistBan.issue_time + WhitelistBan.duration < wl.issue_time)).first()
         if bans is not None:
@@ -61,5 +61,5 @@ async def get_whitelist_bans_by_discord(session: SessionDep, discord_id: str, on
     result = session.exec(select(WhitelistBan).where(
         WhitelistBan.player_id == discord_id
         and WhitelistBan.valid == only_active
-        and WhitelistBan.issue_time + WhitelistBan.duration > datetime.now()))
+        and WhitelistBan.issue_time + WhitelistBan.duration > datetime.datetime.now()))
     return result.all()
