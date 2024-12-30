@@ -19,7 +19,7 @@ class OneTimeToken(SQLModel, table=True):
         default_factory=lambda: datetime.now() + timedelta(minutes=5))
 
 
-class Whitelist(SQLModel, table=True):
+class WhitelistBase(SQLModel):
     id: int | None = Field(default=None, primary_key=True)
     player_id: str = Field(foreign_key="player.discord_id", index=True)
     type: str
@@ -28,16 +28,11 @@ class Whitelist(SQLModel, table=True):
     duration: timedelta | None = Field(default=timedelta(days=30))
     valid: bool | None = Field(default=True)
 
+class Whitelist(WhitelistBase, table=True):
+    pass
 
-class WhitelistBan(SQLModel, table=True):
-    id: int | None = Field(default=None, primary_key=True)
-    player_id: str = Field(foreign_key="player.discord_id", index=True)
-    type: str
-    admin_id: str = Field(foreign_key="player.discord_id")
-    issue_time: datetime | None = Field(default_factory=datetime.now)
+class WhitelistBan(WhitelistBase, table=True):
     duration: timedelta | None = Field(default=timedelta(days=14))
-    valid: bool | None = Field(default=True)
-
 
 class Auth(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)

@@ -15,8 +15,7 @@ from app.main import app
 
 @pytest.fixture(scope="module")
 def client():
-    test_client = TestClient(app, base_url="http://127.0.0.1:8000")
-    yield test_client
+    yield TestClient(app, base_url="http://127.0.0.1:8000")
 
 
 @pytest.fixture(scope="module")
