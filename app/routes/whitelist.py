@@ -13,13 +13,24 @@ logger = logging.getLogger("main-logger")
 router = APIRouter(prefix="/whitelist", tags=["Whitelist"])
 
 
+def create_player_if_not_exists(session: SessionDep, discord_id: str) -> Player:
+    player = session.exec(select(Player).where(Player.discord_id == discord_id)).first()
+    if player is None:
+        player = Player(discord_id=discord_id)
+        session.add(player)
+        session.commit()
+        session.refresh(player)
+    return player
+
 @router.post("/", dependencies=[Depends(verify_bearer)], status_code=status.HTTP_201_CREATED)
 async def create_whitelist(session: SessionDep, wl: Whitelist, ignore_bans: bool = False) -> Whitelist:
+    create_player_if_not_exists(session, wl.player_id)
+
     if not ignore_bans:
         bans = session.exec(select(WhitelistBan).where(
             WhitelistBan.player_id == wl.player_id).where(
             WhitelistBan.valid is True).where(
-            WhitelistBan.type == wl.type).where(
+            WhitelistBan.wl_type == wl.wl_type).where(
             WhitelistBan.issue_time + WhitelistBan.duration < wl.issue_time)).first()
         if bans is not None:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Player is banned",
@@ -32,22 +43,35 @@ async def create_whitelist(session: SessionDep, wl: Whitelist, ignore_bans: bool
 
 
 @router.get("/ckey/{ckey}", status_code=status.HTTP_200_OK)
-async def get_whitelist_by_ckey(session: SessionDep, ckey: str, valid: bool = True) -> list[Whitelist]:
-    result = session.exec(select(Whitelist).join(Player, onclause=Player.discord_id == Whitelist.player_id)
-                          .where(Player.ckey == ckey).where(Whitelist.valid == valid))
+async def get_whitelist_by_ckey(session: SessionDep, ckey: str, valid: bool = True, wl_type: str | None = None) -> list[Whitelist]:
+    result = session.exec(select(Whitelist)
+                          .join(Player, onclause=Player.discord_id == Whitelist.player_id)
+                          .where(Player.ckey == ckey)
+                          .where(Whitelist.valid == valid))
+    if wl_type is not None:
+        result = result.where(Whitelist.wl_type == wl_type)
     return result.all()
 
 @router.get("/discord/{discord_id}", status_code=status.HTTP_200_OK)
-async def get_whitelist_by_discord(session: SessionDep, discord_id: str, valid: bool = True) -> list[Whitelist]:
-    result = session.exec(select(Whitelist).join(Player, onclause=Player.discord_id == Whitelist.player_id)
-                          .where(Player.discord_id == discord_id).where(Whitelist.valid == valid))
+async def get_whitelist_by_discord(session: SessionDep, discord_id: str, valid: bool = True, wl_type: str | None = None) -> list[Whitelist]:
+    result = session.exec(select(Whitelist)
+                          .join(Player, onclause=Player.discord_id == Whitelist.player_id)
+                          .where(Player.discord_id == discord_id)
+                          .where(Whitelist.valid == valid))
+    if wl_type is not None:
+        result = result.where(Whitelist.wl_type == wl_type)
     return result.all()
 
 @router.post("/ban", dependencies=[Depends(verify_bearer)], status_code=status.HTTP_201_CREATED)
 async def ban_whitelist(session: SessionDep, ban: WhitelistBan, invalidate_old_wls: bool = True) -> WhitelistBan:
+    create_player_if_not_exists(session, ban.player_id)
+
     session.add(ban)
     if invalidate_old_wls:
-        old_wls = session.exec(select(Whitelist).where(Whitelist.player_id == ban.player_id)).all()
+        old_wls = session.exec(select(Whitelist)
+                               .where(Whitelist.player_id == ban.player_id).
+                               where(Whitelist.wl_type == ban.wl_type)
+                               ).all()
         for old_wl in old_wls:
             old_wl.valid = False
         session.add_all(old_wls)
@@ -74,3 +98,24 @@ async def pardon_whitelist_ban(session: SessionDep, ban_id: int) -> WhitelistBan
     session.commit()
     session.refresh(db_ban)
     return db_ban
+
+@router.get("/simple/is_whitelisted/ckey/{ckey}", status_code=status.HTTP_200_OK)
+async def is_whitelisted(session: SessionDep, ckey: str, wl_type: str) -> bool:
+    return session.exec(select(Whitelist)
+                        .join(Player, onclause=Player.discord_id == Whitelist.player_id)
+                        .where(Player.ckey == ckey)
+                        .where(Whitelist.wl_type == wl_type)
+                        .where(Whitelist.issue_time + Whitelist.duration < datetime.datetime.now())
+                        .where(Whitelist.valid)).first() is not None
+
+@router.get("simple/active_whitelists/ckey", status_code=status.HTTP_200_OK)
+async def active_whitelists(session: SessionDep, wl_type: str) -> list[str]:
+    return [
+        player.ckey for player in 
+        session.exec(select(Player)
+                     .join(Whitelist, onclause=Player.discord_id == Whitelist.player_id)
+                     .where(Whitelist.wl_type == wl_type)
+                     .where(Whitelist.issue_time + Whitelist.duration < datetime.datetime.now())
+                     .where(Whitelist.valid)
+        ).all()
+    ]
