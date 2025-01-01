@@ -108,7 +108,7 @@ async def is_whitelisted(session: SessionDep, ckey: str, wl_type: str) -> bool:
                         .where(Whitelist.issue_time + Whitelist.duration < datetime.datetime.now())
                         .where(Whitelist.valid)).first() is not None
 
-@router.get("simple/active_whitelists/ckey", status_code=status.HTTP_200_OK)
+@router.get("/simple/active_whitelists/ckey", status_code=status.HTTP_200_OK)
 async def active_whitelists(session: SessionDep, wl_type: str) -> list[str]:
     return [
         player.ckey for player in 
