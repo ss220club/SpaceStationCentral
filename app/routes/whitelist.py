@@ -6,6 +6,7 @@ from sqlmodel import select
 
 from app.database.models import Player, Whitelist, WhitelistBan
 from app.deps import SessionDep, verify_bearer
+from app.schemas.whitelist import NewWhitelistCkey
 
 logger = logging.getLogger("main-logger")
 
@@ -51,6 +52,33 @@ async def get_whitelist_by_ckey(session: SessionDep, ckey: str, valid: bool = Tr
     if wl_type is not None:
         result = result.where(Whitelist.wl_type == wl_type)
     return result.all()
+
+@router.post("/ckey", dependencies=[Depends(verify_bearer)], status_code=status.HTTP_201_CREATED)
+async def create_whitelist_by_ckey(session: SessionDep, wl: NewWhitelistCkey, ignore_bans: bool = False) -> Whitelist:
+    player = session.exec(select(Player).where(Player.ckey == wl.player_ckey)).first()
+    if player is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Player not found")
+    if not ignore_bans:
+        bans = session.exec(select(WhitelistBan).where(
+            WhitelistBan.player_id == player.discord_id).where(
+            WhitelistBan.valid is True).where(
+            WhitelistBan.wl_type == wl.wl_type).where(
+            WhitelistBan.issue_time + WhitelistBan.duration < datetime.datetime.now())).first()
+        if bans is not None:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Player is banned",
+                            headers={"X-Retry-After": str(WhitelistBan.issue_time + WhitelistBan.duration)})
+    admin = session.exec(select(Player).where(Player.ckey == wl.admin_ckey)).first()
+    if admin is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Admin not found")
+
+    new_wl = Whitelist(**wl.model_dump(),
+                       admin_id=admin.discord_id,
+                       player_id=player.discord_id,
+                       duration=datetime.timedelta(days=wl.duration_in_days))
+    session.add(new_wl)
+    session.commit()
+    session.refresh(new_wl)
+    return new_wl
 
 @router.get("/discord/{discord_id}", status_code=status.HTTP_200_OK)
 async def get_whitelist_by_discord(session: SessionDep, discord_id: str, valid: bool = True, wl_type: str | None = None) -> list[Whitelist]:
