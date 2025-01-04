@@ -47,12 +47,11 @@ async def create_whitelist(session: SessionDep, wl: Whitelist, ignore_bans: bool
 
 @router.get("/ckey/{ckey}", status_code=status.HTTP_200_OK)
 async def get_whitelist_by_ckey(session: SessionDep, ckey: str, valid: bool = True, wl_type: str | None = None) -> list[Whitelist]:
-    result = session.exec(select(Whitelist)
-                          .join(Player, onclause=Player.discord_id == Whitelist.player_id)
-                          .where(Player.ckey == ckey)
-                          .where(Whitelist.valid == valid))
+    selection = select(Whitelist).join(Player, onclause=Player.discord_id == Whitelist.player_id).where(
+        Player.ckey == ckey).where(Whitelist.valid == valid)
     if wl_type is not None:
-        result = result.where(Whitelist.wl_type == wl_type)
+        selection = selection.where(Whitelist.wl_type == wl_type)
+    result = session.exec(selection)
     return result.all()
 
 
@@ -131,12 +130,13 @@ async def ban_whitelist_by_ckey(session: SessionDep, ban: NewWhitelistBanCkey, i
 
 @router.get("/ban/discord/{discord_id}", status_code=status.HTTP_200_OK)
 async def get_whitelist_bans_by_discord(session: SessionDep, discord_id: str, wl_type: str | None = None, only_active: bool = True) -> list[WhitelistBan]:
-    result = session.exec(select(WhitelistBan).where(
+    selection = select(WhitelistBan).where(
         WhitelistBan.player_id == discord_id).where(
         WhitelistBan.valid == only_active).where(
-        WhitelistBan.issue_time + WhitelistBan.duration > datetime.datetime.now()))
+        WhitelistBan.issue_time + WhitelistBan.duration > datetime.datetime.now())
     if wl_type is not None:
-        result = result.where(WhitelistBan.wl_type == wl_type)
+        selection = selection.where(WhitelistBan.wl_type == wl_type)
+    result = session.exec(selection)
     return result.all()
 
 
