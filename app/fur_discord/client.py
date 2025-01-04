@@ -113,7 +113,6 @@ class DiscordOAuthClient:
     async def get_user(self, token: str):
         route = '/users/@me'
         response = await self.request(route, token)
-        print(response)
         return User.model_validate(response)
 
     async def guilds(self, request: Request) -> List[GuildPreview]:
