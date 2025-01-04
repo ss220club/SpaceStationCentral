@@ -63,7 +63,7 @@ async def create_whitelist_by_ckey(session: SessionDep, wl: NewWhitelistCkey, ig
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Player not found")
     if not ignore_bans:
-        bans = get_whitelist_bans_by_discord(session, player.discord_id)
+        bans = await get_whitelist_bans_by_discord(session, player.discord_id)
         if bans is not None:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Player is banned",
                                 headers={"X-Retry-After": str(WhitelistBan.issue_time + WhitelistBan.duration)})
