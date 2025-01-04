@@ -64,11 +64,7 @@ async def create_whitelist_by_ckey(session: SessionDep, wl: NewWhitelistCkey, ig
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Player not found")
     if not ignore_bans:
-        bans = session.exec(select(WhitelistBan).where(
-            WhitelistBan.player_id == player.discord_id).where(
-            WhitelistBan.valid is True).where(
-            WhitelistBan.wl_type == wl.wl_type).where(
-            WhitelistBan.issue_time + WhitelistBan.duration > datetime.datetime.now())).first()
+        bans = get_whitelist_bans_by_discord(session, player.discord_id)
         if bans is not None:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Player is banned",
                                 headers={"X-Retry-After": str(WhitelistBan.issue_time + WhitelistBan.duration)})
@@ -117,6 +113,7 @@ async def ban_whitelist(session: SessionDep, ban: WhitelistBan, invalidate_old_w
     session.refresh(ban)
     return ban
 
+
 @router.post("/ban/ckey", dependencies=[Depends(verify_bearer)], status_code=status.HTTP_201_CREATED)
 async def ban_whitelist_by_ckey(session: SessionDep, ban: NewWhitelistBanCkey, invalidate_old_wls: bool = True) -> WhitelistBan:
     player = session.exec(select(Player).where(
@@ -131,13 +128,17 @@ async def ban_whitelist_by_ckey(session: SessionDep, ban: NewWhitelistBanCkey, i
             status_code=status.HTTP_404_NOT_FOUND, detail="Admin not found")
     return await ban_whitelist(session, WhitelistBan(**ban.model_dump(), player_id=player.discord_id, admin_id=admin.discord_id, duration=datetime.timedelta(days=ban.duration_days)), invalidate_old_wls)
 
+
 @router.get("/ban/discord/{discord_id}", status_code=status.HTTP_200_OK)
-async def get_whitelist_bans_by_discord(session: SessionDep, discord_id: str, only_active: bool = True) -> list[WhitelistBan]:
+async def get_whitelist_bans_by_discord(session: SessionDep, discord_id: str, wl_type: str | None = None, only_active: bool = True) -> list[WhitelistBan]:
     result = session.exec(select(WhitelistBan).where(
         WhitelistBan.player_id == discord_id).where(
         WhitelistBan.valid == only_active).where(
         WhitelistBan.issue_time + WhitelistBan.duration > datetime.datetime.now()))
+    if wl_type is not None:
+        result = result.where(WhitelistBan.wl_type == wl_type)
     return result.all()
+
 
 @router.patch("/ban", dependencies=[Depends(verify_bearer)], status_code=status.HTTP_202_ACCEPTED)
 async def pardon_whitelist_ban(session: SessionDep, ban_id: int) -> WhitelistBan:
