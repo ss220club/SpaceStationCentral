@@ -146,7 +146,7 @@ async def get_whitelist_bans_by_discord(session: SessionDep, discord_id: str, wl
 async def pardon_whitelist_ban(session: SessionDep, ban_id: int) -> WhitelistBan:
     db_ban = session.exec(select(WhitelistBan).where(
         WhitelistBan.id == ban_id)).first()
-    if db_ban:
+    if not db_ban:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Ban not found")
     db_ban.valid = False
