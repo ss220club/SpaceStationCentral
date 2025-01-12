@@ -19,6 +19,10 @@ SessionDep = Annotated[Session, Depends(get_session)]
 bearer_scheme = HTTPBearer()
 
 
+def hash_bearer_token(token: str) -> str:
+    return hashlib.sha256(token.encode()).hexdigest()
+
+
 def verify_bearer(
     credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
     session: Session = Depends(get_session),
@@ -30,7 +34,7 @@ def verify_bearer(
     # Extract the token from the credentials
     token = credentials.credentials
 
-    hashed_token = hashlib.sha256(token.encode()).hexdigest()
+    hashed_token = hash_bearer_token(token)
     if session.exec(
         select(Auth).where(Auth.token_hash == hashed_token)
     ).first() is None:

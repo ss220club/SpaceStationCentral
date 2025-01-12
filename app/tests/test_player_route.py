@@ -1,26 +1,18 @@
-# pylint: disable=redefined-outer-name
 import hashlib
 import random
 
 from sqlmodel import select
 
-from app.database.models import Auth, OneTimeToken, Player
-from app.tests.fixtures import (ckey, client,  # pylint: disable=unused-import
-                                db_session, discord_id, discord_id2)
+from app.database.models import Auth, CkeyLinkToken, Player
 
 
-def test_get_player(client, db_session, discord_id, ckey):
-    player = Player(ckey=ckey, discord_id=discord_id)
-    db_session.add(player)
-    db_session.commit()
-    db_session.refresh(player)
-
-    response = client.get(f"/player/ckey/{ckey}")
+def test_get_player(client, player):
+    response = client.get(f"/player/ckey/{player.ckey}")
     assert response.status_code == 200
     player_result = Player.model_validate(response.json())
     assert player_result == player
 
-    response = client.get(f"/player/discord/{discord_id}")
+    response = client.get(f"/player/discord/{player.discord_id}")
     assert response.status_code == 200
     player_result = Player.model_validate(response.json())
     assert player_result == player
@@ -45,6 +37,6 @@ def test_create_token(client, db_session, ckey):
         f"/player/token/{ckey}", headers={"Authorization": f"Bearer {auth_token}"})
     assert response.status_code == 201
 
-    created_token = db_session.exec(select(OneTimeToken).where(
-        OneTimeToken.token == response.json())).first()
+    created_token = db_session.exec(select(CkeyLinkToken).where(
+        CkeyLinkToken.token == response.json())).first()
     assert created_token is not None

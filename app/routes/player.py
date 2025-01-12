@@ -6,7 +6,7 @@ from fastapi.responses import RedirectResponse
 from sqlmodel import Session, select
 
 from app.core.config import Config
-from app.database.models import OneTimeToken, Player
+from app.database.models import CkeyLinkToken, Player
 from app.deps import SessionDep, verify_bearer
 from app.fur_discord import DiscordOAuthClient
 
@@ -26,14 +26,14 @@ async def get_token_by_ckey(session: Session, ckey: str) -> str:
     """
     If token already exists, makes sure that its valid, if not - regenerates it. If token doesnt exist - generates it.
     """
-    token_entry = session.exec(select(OneTimeToken).where(
-        OneTimeToken.ckey == ckey)).first()
+    token_entry = session.exec(select(CkeyLinkToken).where(
+        CkeyLinkToken.ckey == ckey)).first()
     if token_entry is None:
-        token_entry = OneTimeToken(ckey=ckey)
-    elif token_entry.expiry < datetime.datetime.now():
+        token_entry = CkeyLinkToken(ckey=ckey)
+    elif token_entry.expiration_time < datetime.datetime.now():
         session.delete(token_entry)
         session.commit()
-        token_entry = OneTimeToken(ckey=ckey)
+        token_entry = CkeyLinkToken(ckey=ckey)
     else:
         return token_entry.token
 
@@ -48,15 +48,15 @@ async def get_token_owner(session: Session, token: str) -> str:
     """
     Assumes that the token is valid
     """
-    return session.exec(select(OneTimeToken).where(OneTimeToken.token == token)).first().ckey
+    return session.exec(select(CkeyLinkToken).where(CkeyLinkToken.token == token)).first().ckey
 
 
 async def is_token_valid(session: Session, token: str):
     """
     Checks if the given state token is valid for the given ckey.
     """
-    token_entry = session.exec(select(OneTimeToken).where(
-        OneTimeToken.token == token).where(OneTimeToken.expiry > datetime.datetime.now())).first()
+    token_entry = session.exec(select(CkeyLinkToken).where(
+        CkeyLinkToken.token == token).where(CkeyLinkToken.expiration_time > datetime.datetime.now())).first()
     return token_entry is not None
 
 
@@ -97,8 +97,8 @@ async def callback(session: SessionDep, code: str, state: str) -> Player:
     if ckey is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Wrong or expired token")
-    user = await oauth_client.get_user(discord_token)
-    discord_id = user.id
+    discord_user = await oauth_client.get_user(discord_token)
+    discord_id = discord_user.id
 
     if session.exec(select(Player).where(Player.ckey == ckey or Player.discord_id == discord_id)).first() is not None:
         logger.debug(
