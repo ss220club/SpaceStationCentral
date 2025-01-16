@@ -25,7 +25,6 @@ def client(app: FastAPI):
 
 @pytest.fixture(scope="function")
 def db_session():
-    
 
     # Create an in-memory SQLite database engine
     # sqlite_engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False})
