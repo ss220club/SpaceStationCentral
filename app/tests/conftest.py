@@ -101,7 +101,7 @@ def player_factory(db_session: Session):
 
 @pytest.fixture(scope="function")
 def duration_days():
-    yield datetime.timedelta(days=random.randint(1, 777))
+    yield random.randint(1, 777)
 
 
 def generate_wl_type():

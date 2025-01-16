@@ -1,8 +1,9 @@
 from pydantic import BaseModel
 
+from app.database.models import Player, Whitelist, WhitelistBase
+
 
 class NewWhitelistBase(BaseModel):
-    wl_type: str
     duration_days: int
 
 
@@ -26,3 +27,8 @@ class NewWhitelistDiscord(NewWhitelistBase):
 
 class NewWhitelistBanDiscord(NewWhitelistCkey, NewWhitelistBanBase):
     pass
+
+
+class WhitelistInfo(WhitelistBase):
+    player: Player
+    admin: Player

@@ -29,9 +29,9 @@ class CkeyLinkToken(SQLModel, table=True):
 
 class WhitelistBase(SQLModel):
     id: int = Field(default=None, primary_key=True)
-    player_id: str = Field(foreign_key="player.id", index=True)
+    player_id: int = Field(foreign_key="player.id", index=True)
     wl_type: str = Field(default="default")
-    admin_id: str = Field(foreign_key="player.id")
+    admin_id: int = Field(foreign_key="player.id")
     issue_time: datetime = Field(default_factory=datetime.now)
     expiration_time: datetime = Field(
         default_factory=lambda: datetime.now() + DEFAULT_WHITELIST_EXPIRATION_TIME)
@@ -55,6 +55,6 @@ class Auth(SQLModel, table=True):
 
 class Donation(SQLModel, table=True):
     id: int = Field(default=None, primary_key=True)
-    player_id: str = Field(foreign_key="player.id", index=True)
+    player_id: int = Field(foreign_key="player.id", index=True)
     amount: int = Field()
     date: datetime = Field(default_factory=datetime.now)
