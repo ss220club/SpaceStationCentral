@@ -5,3 +5,4 @@ __pycache__
 *.log
 .idea
 .prod_config.py
+ci.db
