@@ -28,7 +28,3 @@ class NewWhitelistDiscord(NewWhitelistBase):
 class NewWhitelistBanDiscord(NewWhitelistCkey, NewWhitelistBanBase):
     pass
 
-
-class WhitelistInfo(WhitelistBase):
-    player: Player
-    admin: Player

@@ -30,7 +30,7 @@ async def get_whitelists(session: SessionDep, active_only: bool = True) -> list[
     return session.exec(selection).all()
 
 
-@router.post("/", status_code=status.HTTP_201_CREATED, dependencies=[Depends(verify_bearer)])
+@router.put("/", status_code=status.HTTP_201_CREATED, dependencies=[Depends(verify_bearer)])
 async def create_whitelist(session: SessionDep, new_whitelist: Whitelist) -> Whitelist:
     session.add(new_whitelist)
     session.commit()
@@ -48,7 +48,7 @@ async def get_whitelists_by_type(session: SessionDep, wl_type: str, active_only:
     return session.exec(selection).all()
 
 
-@router.get("/{wl_type}/ckey", status_code=status.HTTP_200_OK, tags=["la stampella", "ckey"])
+@router.get("/{wl_type}/ckeys", status_code=status.HTTP_200_OK, tags=["la stampella", "ckey"])
 async def get_whitelisted_ckeys(session: SessionDep, wl_type: str, active_only: bool = True) -> list[str]:
     """
     Returns all the whitelisted ckeys by wl_type.
@@ -60,7 +60,7 @@ async def get_whitelisted_ckeys(session: SessionDep, wl_type: str, active_only: 
     return session.exec(selection).all()
 
 
-@router.get("/{wl_type}/ckey/{ckey}", status_code=status.HTTP_200_OK, tags=["ckey"])
+@router.get("/{wl_type}/ckey", status_code=status.HTTP_200_OK, tags=["ckey"])
 async def get_whitelists_by_ckey(session: SessionDep, wl_type: str, ckey: str, active_only: bool = True) -> list[Whitelist]:
     selection = select(Whitelist
                        ).join(Player, Player.id == Whitelist.player_id
@@ -87,7 +87,7 @@ async def create_whitelist_by_ckey(session: SessionDep, wl_type: str, ckey: str,
     return await create_whitelist(session, wl)
 
 
-@router.get("/{wl_type}/discord/{discord_id}", status_code=status.HTTP_200_OK, tags=["discord"])
+@router.get("/{wl_type}/discord", status_code=status.HTTP_200_OK, tags=["discord"])
 async def get_whitelists_by_discord(session: SessionDep, wl_type: str, discord_id: str, active_only: bool = True) -> list[Whitelist]:
     selection = select(Whitelist).join(Player, Player.id == Whitelist.player_id).where(
         Player.discord_id == discord_id).where(Whitelist.wl_type == wl_type)
@@ -110,7 +110,7 @@ async def create_whitelist_by_discord(session: SessionDep, wl_type: str, new_whi
     )
     return await create_whitelist(session, wl)
 
-@router.get("/{wl_type}/discord", status_code=status.HTTP_201_CREATED, tags=["la stampella", "discord"])
+@router.get("/{wl_type}/discords", status_code=status.HTTP_201_CREATED, tags=["la stampella", "discord"])
 async def get_whitelisted_discord_ids(session: SessionDep, wl_type: str, active_only: bool = True) -> list[str]:
     selection = select(Player.discord_id).join(
         Whitelist, Whitelist.player_id == Player.id).where(Whitelist.wl_type == wl_type)

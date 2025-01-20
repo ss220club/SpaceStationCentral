@@ -32,11 +32,11 @@ def test_get_whitelists_active(client, whitelist_factory):
 
 
 def test_get_whitelisted_ckeys(client, whitelist_factory, wl_type):
+    assert wl_type != "wrong"  # la stampella - should not happen, but what if
     correct_wls = [whitelist_factory(wl_type=wl_type) for _ in range(5)]
-    assert wl_type != "wrong"  # la stampella
     _ = [whitelist_factory(wl_type="wrong")
          for _ in range(5)]  # Trash wls to test the filter
-    response = client.get(f"/whitelist/{wl_type}/ckey?active_only=false")
+    response = client.get(f"/whitelist/{wl_type}/ckeys?active_only=false")
     assert response.status_code == 200
 
     assert len(correct_wls) == len(response.json())

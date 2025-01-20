@@ -24,8 +24,8 @@ def hash_bearer_token(token: str) -> str:
 
 
 def verify_bearer(
+    session: SessionDep,
     credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
-    session: Session = Depends(get_session),
 ) -> str:
     """
     Dependency to verify the Bearer token is valid and present in the database.

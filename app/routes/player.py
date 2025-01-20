@@ -68,7 +68,7 @@ async def login(token: str) -> RedirectResponse:
     return RedirectResponse(oauth_client.get_oauth_login_url(token))
 
 
-@router.post("/token/{ckey}", status_code=status.HTTP_201_CREATED, dependencies=[Depends(verify_bearer)])
+@router.post("/token", status_code=status.HTTP_201_CREATED, dependencies=[Depends(verify_bearer)])
 async def generate_state(session: SessionDep, ckey: str) -> str:
     """
     Generates a state token for the given ckey and returns it. The state token
@@ -116,7 +116,7 @@ async def callback(session: SessionDep, code: str, state: str) -> Player:
     return link
 
 
-@router.get("/ckey/{ckey}")
+@router.get("/ckey")
 async def get_player_by_ckey(session: SessionDep, ckey: str) -> Player:
     """
     Retrieves a player by their ckey.
@@ -129,7 +129,7 @@ async def get_player_by_ckey(session: SessionDep, ckey: str) -> Player:
     return player
 
 
-@router.get("/discord/{discord_id}")
+@router.get("/discord")
 async def get_player_by_discord(session: SessionDep, discord_id: str) -> Player:
     """
     Retrieves a player by their discord ID.

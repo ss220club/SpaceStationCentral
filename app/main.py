@@ -9,6 +9,7 @@ from app.core.logconfig import log_config
 from app.init import init
 from app.routes.player import router as player_router
 from app.routes.whitelist import router as whitelist_router
+from app.routes.whitelist_ban import router as whitelist_ban_router
 
 dictConfig(log_config)
 
@@ -24,8 +25,13 @@ app = FastAPI(
     description=Config.General.PROJECT_DESC,
     lifespan=lifespan)
 
-app.include_router(player_router)
-app.include_router(whitelist_router)
+routers = [
+    player_router,
+    whitelist_router,
+    whitelist_ban_router
+]
+for router in routers:
+    app.include_router(router)
 
 
 @app.get("/", status_code=status.HTTP_418_IM_A_TEAPOT)

@@ -7,23 +7,23 @@ from app.database.models import Auth, CkeyLinkToken, Player
 
 
 def test_get_player(client, player):
-    response = client.get(f"/player/ckey/{player.ckey}")
+    response = client.get("/player/ckey", params={"ckey": player.ckey})
     assert response.status_code == 200
     player_result = Player.model_validate(response.json())
     assert player_result == player
 
-    response = client.get(f"/player/discord/{player.discord_id}")
+    response = client.get("/player/discord", params={"discord_id": player.discord_id})
     assert response.status_code == 200
     player_result = Player.model_validate(response.json())
     assert player_result == player
 
 
 def test_create_token(client, db_session, ckey):
-    response = client.post(f"/player/token/{ckey}")
+    response = client.post("/player/token", params={"ckey": ckey})
     assert response.status_code == 403
     fake_auth_token = 00000000
     response = client.post(
-        f"/player/token/{ckey}", headers={"Authorization": f"Bearer {fake_auth_token}"})
+        "/player/token", params={"ckey": ckey}, headers={"Authorization": f"Bearer {fake_auth_token}"})
     assert response.status_code == 401
 
     auth_token = str(random.randint(10000000, 99999999))
@@ -34,7 +34,7 @@ def test_create_token(client, db_session, ckey):
     db_session.commit()
 
     response = client.post(
-        f"/player/token/{ckey}", headers={"Authorization": f"Bearer {auth_token}"})
+        "/player/token", params={"ckey": ckey}, headers={"Authorization": f"Bearer {auth_token}"})
     assert response.status_code == 201
 
     created_token = db_session.exec(select(CkeyLinkToken).where(
