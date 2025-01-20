@@ -7,7 +7,7 @@ from sqlmodel.sql.expression import SelectOfScalar
 
 from app.database.models import Player, Whitelist, WhitelistBan
 from app.deps import BEARER_DEP_RESPONSES, SessionDep, verify_bearer
-from app.routes.player import get_player_by_ckey, get_player_by_discord
+from app.routes.v1.player import get_player_by_ckey, get_player_by_discord
 from app.schemas.whitelist import NewWhitelistCkey, NewWhitelistDiscord
 
 logger = logging.getLogger("main-logger")

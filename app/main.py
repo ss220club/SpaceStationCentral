@@ -7,9 +7,7 @@ from fastapi.responses import FileResponse
 from app.core.config import Config
 from app.core.logconfig import log_config
 from app.init import init
-from app.routes.player import router as player_router
-from app.routes.wl.whitelist import router as whitelist_router
-from app.routes.wl.whitelistban import router as whitelistban_router
+from app.routes.v1.main_router import v1_router
 
 dictConfig(log_config)
 
@@ -25,15 +23,7 @@ app = FastAPI(
     description=Config.General.PROJECT_DESC,
     lifespan=lifespan
 )
-
-routers = [
-    player_router,
-    whitelist_router,
-    whitelistban_router
-]
-for router in routers:
-    app.include_router(router)
-
+app.include_router(v1_router)
 
 @app.get("/", status_code=status.HTTP_418_IM_A_TEAPOT)
 async def root() -> dict:

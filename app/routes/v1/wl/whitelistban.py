@@ -6,8 +6,8 @@ from sqlmodel import select
 
 from app.database.models import Player, Whitelist, WhitelistBan
 from app.deps import BEARER_DEP_RESPONSES, SessionDep, verify_bearer
-from app.routes.player import get_player_by_ckey, get_player_by_discord
-from app.routes.wl.whitelist import create_whitelist, select_only_active_whitelists
+from app.routes.v1.player import get_player_by_ckey, get_player_by_discord
+from app.routes.v1.wl.whitelist import create_whitelist, select_only_active_whitelists
 from app.schemas.whitelist import NewWhitelistBanCkey, NewWhitelistBanDiscord
 
 logger = logging.getLogger("main-logger")
@@ -56,8 +56,8 @@ async def get_whitelistbans_by_discord(session: SessionDep, wl_type: str, discor
 
 @router.post("/{wl_type}/ckey", status_code=status.HTTP_201_CREATED,
              dependencies=[Depends(verify_bearer)], responses=BEARER_DEP_RESPONSES, tags=["ckey"])
-async def create_whitelist_by_ckey(session: SessionDep, wl_type: str, ckey: str, new_whitelist: NewWhitelistBanCkey) -> Whitelist:
-    player = await get_player_by_ckey(session, ckey)
+async def create_whitelist_by_ckey(session: SessionDep, wl_type: str,new_whitelist: NewWhitelistBanCkey) -> Whitelist:
+    player = await get_player_by_ckey(session, new_whitelist.player_ckey)
     admin = await get_player_by_ckey(session, new_whitelist.admin_ckey)
     wl = WhitelistBan(
         player_id=player.id,
