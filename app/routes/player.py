@@ -7,7 +7,7 @@ from sqlmodel import Session, select
 
 from app.core.config import Config
 from app.database.models import CkeyLinkToken, Player
-from app.deps import SessionDep, verify_bearer
+from app.deps import SessionDep, verify_bearer, BEARER_DEP_RESPONSES
 from app.fur_discord import DiscordOAuthClient
 
 logger = logging.getLogger("main-logger")
@@ -68,7 +68,7 @@ async def login(token: str) -> RedirectResponse:
     return RedirectResponse(oauth_client.get_oauth_login_url(token))
 
 
-@router.post("/token", status_code=status.HTTP_201_CREATED, dependencies=[Depends(verify_bearer)])
+@router.post("/token", status_code=status.HTTP_201_CREATED, dependencies=[Depends(verify_bearer)], responses=BEARER_DEP_RESPONSES)
 async def generate_state(session: SessionDep, ckey: str) -> str:
     """
     Generates a state token for the given ckey and returns it. The state token

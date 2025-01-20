@@ -23,6 +23,20 @@ def hash_bearer_token(token: str) -> str:
     return hashlib.sha256(token.encode()).hexdigest()
 
 
+BEARER_DEP_RESPONSES = {
+    401: {
+        "description": "Invalid or missing bearer token",
+        "content": {
+            "application/json": {
+                "example": {
+                    "detail": "Invalid or missing bearer token"
+                }
+            }
+        }
+    }
+}
+
+
 def verify_bearer(
     session: SessionDep,
     credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),

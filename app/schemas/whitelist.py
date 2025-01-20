@@ -27,4 +27,3 @@ class NewWhitelistDiscord(NewWhitelistBase):
 
 class NewWhitelistBanDiscord(NewWhitelistCkey, NewWhitelistBanBase):
     pass
-

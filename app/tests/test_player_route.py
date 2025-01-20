@@ -12,7 +12,8 @@ def test_get_player(client, player):
     player_result = Player.model_validate(response.json())
     assert player_result == player
 
-    response = client.get("/player/discord", params={"discord_id": player.discord_id})
+    response = client.get(
+        "/player/discord", params={"discord_id": player.discord_id})
     assert response.status_code == 200
     player_result = Player.model_validate(response.json())
     assert player_result == player

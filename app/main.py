@@ -8,8 +8,8 @@ from app.core.config import Config
 from app.core.logconfig import log_config
 from app.init import init
 from app.routes.player import router as player_router
-from app.routes.whitelist import router as whitelist_router
-from app.routes.whitelist_ban import router as whitelist_ban_router
+from app.routes.wl.whitelist import router as whitelist_router
+from app.routes.wl.whitelistban import router as whitelistban_router
 
 dictConfig(log_config)
 
@@ -23,12 +23,13 @@ app = FastAPI(
     title=Config.General.PROJECT_NAME,
     version=Config.General.PROJECT_VER,
     description=Config.General.PROJECT_DESC,
-    lifespan=lifespan)
+    lifespan=lifespan
+)
 
 routers = [
     player_router,
     whitelist_router,
-    whitelist_ban_router
+    whitelistban_router
 ]
 for router in routers:
     app.include_router(router)
