@@ -65,7 +65,6 @@ async def create_whitelist_by_ckey(session: SessionDep, wl_type: str, ckey: str,
         wl_type=wl_type,
         expiration_time=datetime.datetime.now(
         ) + datetime.timedelta(days=new_whitelist.duration_days),
-        valid=new_whitelist.valid,
         reason=new_whitelist.reason
     )
     return await create_whitelist(session, wl, ignore_bans=True)
@@ -92,7 +91,6 @@ async def create_whitelist_by_discord(session: SessionDep, wl_type: str, new_whi
         wl_type=wl_type,
         expiration_time=datetime.datetime.now(
         ) + datetime.timedelta(days=new_whitelist.duration_days),
-        valid=new_whitelist.valid,
         reason=new_whitelist.reason
     )
     return await create_whitelist(session, wl, ignore_bans=True)

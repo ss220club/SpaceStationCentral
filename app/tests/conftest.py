@@ -2,6 +2,7 @@
 import datetime
 import random
 import string
+from typing import Generator
 
 import pytest
 from fastapi import FastAPI
@@ -14,17 +15,17 @@ from app.main import app as main_app
 
 
 @pytest.fixture(scope="session")
-def app():
+def app() -> Generator[FastAPI, None, None]:
     yield main_app
 
 
 @pytest.fixture(scope="session")
-def client(app: FastAPI):
+def client(app: FastAPI) -> Generator[TestClient, None, None]:
     yield TestClient(app, base_url="http://127.0.0.1:8000")
 
 
 @pytest.fixture(scope="function")
-def db_session():
+def db_session() -> Generator[Session, None, None]:
 
     # Create an in-memory SQLite database engine
     # sqlite_engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False})
@@ -41,14 +42,14 @@ def db_session():
 
 
 @pytest.fixture(scope="function", autouse=True)
-def override_session(app, db_session):
+def override_session(app, db_session) -> Generator[None, None, None]:
     app.dependency_overrides[get_session] = lambda: db_session
     yield
     app.dependency_overrides = {}
 
 
 @pytest.fixture(scope="function")
-def bearer(db_session: Session):
+def bearer(db_session: Session) -> Generator[str, None, None]:
     token = str(random.randint(10000000, 99999999))
     hashed_token = hash_bearer_token(token)
 
@@ -59,25 +60,25 @@ def bearer(db_session: Session):
     yield token
 
 
-def generate_discord_id():
+def generate_discord_id() -> str:
     return str(random.randint(100000000000000000, 999999999999999999))
 
 
 @pytest.fixture(scope="function")
-def discord_id():
+def discord_id() -> Generator[str, None, None]:
     yield generate_discord_id()
 
 
-def generate_ckey():
+def generate_ckey() -> str:
     return ''.join(random.choices(string.ascii_letters + string.digits, k=8))
 
 
 @pytest.fixture(scope="function")
-def ckey():
+def ckey() -> Generator[str, None, None]:
     yield generate_ckey()
 
 
-def create_player(db_session: Session, ckey: str, discord_id: str):
+def create_player(db_session: Session, ckey: str, discord_id: str) -> Player:
     player = Player(ckey=ckey, discord_id=discord_id)
     db_session.add(player)
     db_session.commit()
@@ -86,13 +87,13 @@ def create_player(db_session: Session, ckey: str, discord_id: str):
 
 
 @pytest.fixture(scope="function")
-def player(db_session: Session, ckey: str, discord_id: str):
+def player(db_session: Session, ckey: str, discord_id: str) -> Generator[Player, None, None]:
     yield create_player(db_session, ckey, discord_id)
 
 
 @pytest.fixture(scope="function")
-def player_factory(db_session: Session):
-    def factory(ckey: str | None = None, discord_id: str | None = None):
+def player_factory(db_session: Session) -> Generator[Player, None, None]:
+    def factory(ckey: str | None = None, discord_id: str | None = None) -> Player:
         ckey = ckey if ckey is not None else generate_ckey()
         discord_id = discord_id if discord_id is not None else generate_discord_id()
         return create_player(db_session, ckey, discord_id)
@@ -100,20 +101,21 @@ def player_factory(db_session: Session):
 
 
 @pytest.fixture(scope="function")
-def duration_days():
+def duration_days() -> Generator[int, None, None]:
     yield random.randint(1, 777)
 
 
-def generate_wl_type():
+def generate_wl_type() -> str:
     return ''.join(random.choices(string.ascii_letters + string.digits, k=8))
 
 
 @pytest.fixture(scope="function")
-def wl_type():
+def wl_type() -> Generator[str, None, None]:
     yield generate_wl_type()
 
 
-def create_whitelist(db_session: Session, player: Player, admin: Player, wl_type: str, expiration_time: datetime.datetime, valid: bool):
+def create_whitelist(db_session: Session, player: Player, admin: Player,
+                    wl_type: str, expiration_time: datetime.datetime, valid: bool) -> Whitelist:
     wl = Whitelist(
         player_id=player.id,
         admin_id=admin.id,
@@ -128,12 +130,13 @@ def create_whitelist(db_session: Session, player: Player, admin: Player, wl_type
 
 
 @pytest.fixture(scope="function")
-def whitelist(db_session: Session, player: Player, admin: Player, wl_type: str, expiration_time: datetime.datetime, valid: bool):
+def whitelist(db_session: Session, player: Player, admin: Player,
+              wl_type: str, expiration_time: datetime.datetime, valid: bool) -> Generator[Whitelist, None, None]:
     yield create_whitelist(db_session, player, admin, wl_type, expiration_time, valid)
 
 
 @pytest.fixture(scope="function")
-def whitelist_factory(db_session: Session):
+def whitelist_factory(db_session: Session) -> Generator[Whitelist, None, None]:
     def factory(player: Player | None = None,
                 admin: Player | None = None,
                 wl_type: str | None = None,

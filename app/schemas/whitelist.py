@@ -25,5 +25,5 @@ class NewWhitelistDiscord(NewWhitelistBase):
     admin_discord_id: str
 
 
-class NewWhitelistBanDiscord(NewWhitelistCkey, NewWhitelistBanBase):
+class NewWhitelistBanDiscord(NewWhitelistDiscord, NewWhitelistBanBase):
     pass

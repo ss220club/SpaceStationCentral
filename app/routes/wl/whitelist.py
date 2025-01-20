@@ -89,8 +89,8 @@ async def get_whitelists_by_ckey(session: SessionDep, wl_type: str, ckey: str, a
 
 @router.post("/{wl_type}/ckey", status_code=status.HTTP_201_CREATED,
              dependencies=[Depends(verify_bearer)], responses=BEARER_DEP_RESPONSES, tags=["ckey"])
-async def create_whitelist_by_ckey(session: SessionDep, wl_type: str, ckey: str, new_whitelist: NewWhitelistCkey) -> Whitelist:
-    player = await get_player_by_ckey(session, ckey)
+async def create_whitelist_by_ckey(session: SessionDep, wl_type: str, new_whitelist: NewWhitelistCkey) -> Whitelist:
+    player = await get_player_by_ckey(session, new_whitelist.player_ckey)
     admin = await get_player_by_ckey(session, new_whitelist.admin_ckey)
     wl = Whitelist(
         player_id=player.id,
@@ -98,7 +98,6 @@ async def create_whitelist_by_ckey(session: SessionDep, wl_type: str, ckey: str,
         wl_type=wl_type,
         expiration_time=datetime.datetime.now(
         ) + datetime.timedelta(days=new_whitelist.duration_days),
-        valid=new_whitelist.valid
     )
     return await create_whitelist(session, wl)
 

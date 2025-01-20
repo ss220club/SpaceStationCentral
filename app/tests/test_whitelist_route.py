@@ -1,7 +1,7 @@
 import datetime
 
 from app.database.models import Whitelist
-from app.schemas.whitelist import NewWhitelistDiscord
+from app.schemas.whitelist import NewWhitelistDiscord, NewWhitelistCkey
 
 
 def test_get_whitelists_general_empty(client):
@@ -51,6 +51,27 @@ def test_post_whitelist_discord(client, player, bearer, wl_type, duration_days):
     )
     response = client.post(
         f"whitelist/{wl_type}/discord",
+        json=new_wl.model_dump(),
+        headers={"Authorization": f"Bearer {bearer}"}
+    )
+    assert response.status_code == 201
+
+    wl = Whitelist.model_validate(response.json())
+
+    assert wl.player_id == player.id
+    assert wl.admin_id == player.id
+    assert wl.wl_type == wl_type
+    assert wl.expiration_time > datetime.datetime.now()
+    assert wl.valid
+
+def test_post_whitelist_ckey(client, player, bearer, wl_type, duration_days):
+    new_wl = NewWhitelistCkey(
+        player_ckey=player.ckey,
+        admin_ckey=player.ckey,
+        duration_days=duration_days
+    )
+    response = client.post(
+        f"whitelist/{wl_type}/ckey",
         json=new_wl.model_dump(),
         headers={"Authorization": f"Bearer {bearer}"}
     )
