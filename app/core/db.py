@@ -1,21 +1,21 @@
 from sqlmodel import SQLModel, create_engine
 
-from app.core.config import Config
+from app.core.config import CONFIG
 
-DBConfig = Config.Database
+DBConfig = CONFIG.database
 
 engine = create_engine(
-    f"{DBConfig.ENGINE}://{DBConfig.USER}:{DBConfig.PASSWORD}@{
-        DBConfig.HOST}:{DBConfig.PORT}/{DBConfig.NAME}",
-    pool_size=DBConfig.POOL_SIZE,
-    max_overflow=DBConfig.OVERFLOW,
-    pool_recycle=DBConfig.POOL_RECYCLE,
-    pool_pre_ping=DBConfig.POOL_PRE_PING,
+    f"{DBConfig.engine}://{DBConfig.user}:{DBConfig.password}@{
+        DBConfig.host}:{DBConfig.port}/{DBConfig.name}",
+    pool_size=DBConfig.pool_size,
+    max_overflow=DBConfig.overflow,
+    pool_recycle=DBConfig.pool_recycle,
+    pool_pre_ping=DBConfig.pool_pre_ping,
 )
 
 
 def init_db() -> None:
-    if not Config.Database.NEEDS_REBUILD:
+    if not CONFIG.database.needs_rebuild:
         return
 
     SQLModel.metadata.drop_all(engine)

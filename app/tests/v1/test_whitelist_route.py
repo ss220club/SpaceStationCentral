@@ -64,6 +64,7 @@ def test_post_whitelist_discord(client, player, bearer, wl_type, duration_days):
     assert wl.expiration_time > datetime.datetime.now()
     assert wl.valid
 
+
 def test_post_whitelist_ckey(client, player, bearer, wl_type, duration_days):
     new_wl = NewWhitelistCkey(
         player_ckey=player.ckey,

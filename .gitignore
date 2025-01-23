@@ -4,5 +4,5 @@ __pycache__
 .env
 *.log
 .idea
-.prod_config.py
+.config.toml
 ci.db

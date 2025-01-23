@@ -1,0 +1,23 @@
+[Database]
+engine = "mariadb"
+name = "central"
+user = "central"
+password = "central"
+host = "127.0.0.1"
+port = 3306
+pool_size = 10
+overflow = 5
+pool_recycle = 3600
+pool_pre_ping = true
+needs_rebuild = true
+
+[OAuth]
+client_secret = "12345678"
+client_id = 12345678  # TOML supports integers without quotes
+
+[General]
+project_name = "FurFur Central"
+project_desc = "API для объеденения множества серверов SS13 и SS14 в одну систему."
+project_ver = "0.0.1"
+endpoint_url = "http://127.0.0.1:8000"
+favicon_path = "app/assets/favicon.png"

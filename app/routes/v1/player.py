@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import RedirectResponse
 from sqlmodel import Session, select
 
-from app.core.config import Config
+from app.core.config import CONFIG
 from app.database.models import CkeyLinkToken, Player
 from app.deps import SessionDep, verify_bearer, BEARER_DEP_RESPONSES
 from app.fur_discord import DiscordOAuthClient
@@ -17,8 +17,8 @@ router = APIRouter(prefix="/player", tags=["Player"])
 
 CALLBACK_PATH = "/discord_oa"
 oauth_client = DiscordOAuthClient(
-    Config.Oauth.CLIENT_ID, Config.Oauth.CLEINT_SECRET, f"{
-        Config.General.ENDPOINT_URL}{router.prefix}{CALLBACK_PATH}"
+    CONFIG.oauth.client_id, CONFIG.oauth.client_secret, f"{
+        CONFIG.general.endpoint_url}{router.prefix}{CALLBACK_PATH}"
 )
 
 

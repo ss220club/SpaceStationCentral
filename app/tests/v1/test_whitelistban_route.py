@@ -3,6 +3,7 @@ import datetime
 from app.database.models import Whitelist
 from app.schemas.whitelist import NewWhitelistBanDiscord, NewWhitelistBanCkey, NewWhitelistCkey
 
+
 def test_create_whitelistban_by_discord(client, player_factory, wl_type, duration_days, bearer):
     player = player_factory()
     admin = player_factory()
@@ -25,6 +26,7 @@ def test_create_whitelistban_by_discord(client, player_factory, wl_type, duratio
     assert wl.expiration_time > datetime.datetime.now()
     assert wl.valid
 
+
 def test_create_whitelistban_by_ckey(client, player_factory, wl_type, duration_days, bearer):
     player = player_factory()
     admin = player_factory()
@@ -46,6 +48,7 @@ def test_create_whitelistban_by_ckey(client, player_factory, wl_type, duration_d
     assert wlban.wl_type == wl_type
     assert wlban.expiration_time > datetime.datetime.now()
     assert wlban.valid
+
 
 def test_ban_prevents_whitelist(client, player_factory, wl_type, duration_days, bearer):
     player = player_factory()

@@ -4,7 +4,7 @@ from fastapi import FastAPI, status
 from fastapi.concurrency import asynccontextmanager
 from fastapi.responses import FileResponse
 
-from app.core.config import Config
+from app.core.config import CONFIG
 from app.core.logconfig import log_config
 from app.init import init
 from app.routes.v1.main_router import v1_router
@@ -18,12 +18,13 @@ async def lifespan(_: FastAPI):
     yield
 
 app = FastAPI(
-    title=Config.General.PROJECT_NAME,
-    version=Config.General.PROJECT_VER,
-    description=Config.General.PROJECT_DESC,
+    title=CONFIG.general.project_name,
+    version=CONFIG.general.project_ver,
+    description=CONFIG.general.project_desc,
     lifespan=lifespan
 )
 app.include_router(v1_router)
+
 
 @app.get("/", status_code=status.HTTP_418_IM_A_TEAPOT)
 async def root() -> dict:
@@ -35,4 +36,4 @@ async def root() -> dict:
 
 @app.get("/favicon.ico", include_in_schema=False)
 async def favicon():
-    return FileResponse(Config.General.FAVICON_PATH)
+    return FileResponse(CONFIG.general.favicon_path)

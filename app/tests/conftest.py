@@ -115,7 +115,7 @@ def wl_type() -> Generator[str, None, None]:
 
 
 def create_whitelist(db_session: Session, player: Player, admin: Player,
-                    wl_type: str, expiration_time: datetime.datetime, valid: bool) -> Whitelist:
+                     wl_type: str, expiration_time: datetime.datetime, valid: bool) -> Whitelist:
     wl = Whitelist(
         player_id=player.id,
         admin_id=admin.id,
