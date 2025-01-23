@@ -7,15 +7,16 @@ from sqlalchemy import func
 from sqlmodel import select
 from sqlmodel.sql.expression import SelectOfScalar
 
-from app.database.models import Player, Whitelist
+from app.database.models import Player, Whitelist, WhitelistBan
 from app.deps import BEARER_DEP_RESPONSES, SessionDep, verify_bearer
-from app.schemas.whitelist import NewWhitelistBase, NewWhitelistCkey, NewWhitelistDiscord, NewWhitelistInternal
+from app.schemas.whitelist import NewWhitelistBanBase, NewWhitelistBanInternal, NewWhitelistBase, NewWhitelistCkey, NewWhitelistDiscord, NewWhitelistInternal
 from app.schemas.generic import PaginatedResponse
 
 logger = logging.getLogger("main-logger")
 
 
-router = APIRouter(prefix="/whitelists", tags=["Whitelist"])
+router = APIRouter(prefix="/whitelist", tags=["Whitelist"])
+ban_router = APIRouter(prefix="/ban", tags=["Whitelist", "Ban"])
 
 
 def select_only_active_whitelists(selection: SelectOfScalar[Whitelist]):
@@ -25,7 +26,7 @@ def select_only_active_whitelists(selection: SelectOfScalar[Whitelist]):
     )
 
 
-@router.get("/",
+@router.get("s/", # /whitelists
             status_code=status.HTTP_200_OK,
             responses={
                 status.HTTP_200_OK: {"description": "List of matching whitelists"},
@@ -78,15 +79,11 @@ async def create_whitelist_helper(
     admin_resolver: Callable[[Any], SelectOfScalar[Player]],
 ) -> Whitelist:
     """Core logic for creating whitelist entries"""
-    player = session.exec(select(Player).where(player_resolver(data))).first() # type: ignore
-    if not player:
-        raise HTTPException(status.HTTP_404_NOT_FOUND,
-                            detail="Player not found")
-
-    admin = session.exec(select(Player).where(admin_resolver(data))).first() # type: ignore
-    if not admin:
-        raise HTTPException(status.HTTP_404_NOT_FOUND,
-                            detail="Admin not found")
+    player = session.exec(select(Player).where(player_resolver(data))).first()
+    admin = session.exec(select(Player).where(admin_resolver(data))).first()
+    
+    if not player or not admin:
+        raise HTTPException(404, detail="Player or admin not found")
 
     wl = Whitelist(
         player_id=player.id,
@@ -98,6 +95,7 @@ async def create_whitelist_helper(
 
     session.add(wl)
     session.commit()
+    logger.info(f"Whitelist created: {wl}")
     session.refresh(wl)
     return wl
 
