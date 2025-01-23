@@ -1,6 +1,7 @@
-from io import BufferedReader
-from pydantic import BaseModel, ValidationError
 import tomllib
+from io import BufferedReader
+
+from pydantic import BaseModel, ValidationError
 
 # Logging isnt initialized yet at this point, so uses prints
 
@@ -10,14 +11,13 @@ import tomllib
 class CustomBaseModel(BaseModel):
     def log_defaults(self) -> None:
         """Log fields that use their default values."""
-        for field_name in self.model_fields:
+        for field_name, field_info in self.model_fields.items():
             current_value = getattr(self, field_name)
-            default_value = self.model_fields[field_name].default
+            default_value = field_info.default
 
             if current_value == default_value:
                 print(f"Default used for '{field_name}'")
             elif isinstance(current_value, CustomBaseModel):
-                # Recursively check nested Pydantic models
                 print(f"Checking nested model: {field_name}")
                 current_value.log_defaults()
 

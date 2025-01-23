@@ -1,4 +1,5 @@
 from typing import Generic, TypeVar
+
 from pydantic import BaseModel
 from starlette.datastructures import URL
 

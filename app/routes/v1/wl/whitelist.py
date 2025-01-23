@@ -7,10 +7,11 @@ from sqlalchemy import func
 from sqlmodel import select
 from sqlmodel.sql.expression import SelectOfScalar
 
-from app.database.models import Player, Whitelist, WhitelistBan
+from app.database.models import Player, Whitelist
 from app.deps import BEARER_DEP_RESPONSES, SessionDep, verify_bearer
-from app.schemas.whitelist import NewWhitelistBanBase, NewWhitelistBanInternal, NewWhitelistBase, NewWhitelistCkey, NewWhitelistDiscord, NewWhitelistInternal
 from app.schemas.generic import PaginatedResponse
+from app.schemas.whitelist import (NewWhitelistBase, NewWhitelistCkey,
+                                   NewWhitelistDiscord, NewWhitelistInternal)
 
 logger = logging.getLogger("main-logger")
 
@@ -26,7 +27,7 @@ def select_only_active_whitelists(selection: SelectOfScalar[Whitelist]):
     )
 
 
-@router.get("s/", # /whitelists
+@router.get("s/",  # /whitelists
             status_code=status.HTTP_200_OK,
             responses={
                 status.HTTP_200_OK: {"description": "List of matching whitelists"},
@@ -41,7 +42,7 @@ async def get_whitelists(session: SessionDep,
                          page: int = 1,
                          page_size: int = 50) -> PaginatedResponse[Whitelist]:
     selection = select(Whitelist).join(
-        Player, Player.id == Whitelist.player_id) # type: ignore 
+        Player, Player.id == Whitelist.player_id)  # type: ignore
 
     if active_only:
         selection = select_only_active_whitelists(selection)
@@ -52,7 +53,7 @@ async def get_whitelists(session: SessionDep,
     if wl_type is not None:
         selection = selection.where(Whitelist.wl_type == wl_type)
 
-    total = session.exec(selection.with_only_columns(func.count())).first()
+    total = session.exec(selection.with_only_columns(func.count())).first() # pylint: disable=not-callable
     selection = selection.offset((page-1)*page_size).limit(page_size)
     items = session.exec(selection).all()
 
@@ -81,7 +82,7 @@ async def create_whitelist_helper(
     """Core logic for creating whitelist entries"""
     player = session.exec(select(Player).where(player_resolver(data))).first()
     admin = session.exec(select(Player).where(admin_resolver(data))).first()
-    
+
     if not player or not admin:
         raise HTTPException(404, detail="Player or admin not found")
 
@@ -95,7 +96,7 @@ async def create_whitelist_helper(
 
     session.add(wl)
     session.commit()
-    logger.info(f"Whitelist created: {wl}")
+    logger.info("Whitelist created: %s", wl)
     session.refresh(wl)
     return wl
 

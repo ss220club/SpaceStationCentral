@@ -1,7 +1,7 @@
-from typing import List, Optional
+from typing import List
 
 import aiohttp
-from aiocache import cached # type: ignore
+from aiocache import cached  # type: ignore
 from fastapi import Depends, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
@@ -28,7 +28,7 @@ class DiscordOAuthClient:
         self.client_id = client_id
         self.client_secret = client_secret
         self.redirect_uri = redirect_uri
-        self.scopes = '%20'.join(scope for scope in scopes)
+        self.scopes = '%20'.join(scopes)
 
     @property
     def oauth_login_url(self):

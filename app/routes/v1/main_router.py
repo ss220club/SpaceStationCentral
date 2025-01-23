@@ -1,4 +1,5 @@
 from fastapi import APIRouter
+
 from app.routes.v1.player import router as player_router
 from app.routes.v1.wl.whitelist import router as whitelist_router
 

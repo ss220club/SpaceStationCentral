@@ -1,14 +1,14 @@
 import datetime
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import RedirectResponse
 from sqlalchemy import func
 from sqlmodel import Session, select
 
 from app.core.config import CONFIG
 from app.database.models import CkeyLinkToken, Player
-from app.deps import SessionDep, verify_bearer, BEARER_DEP_RESPONSES
+from app.deps import BEARER_DEP_RESPONSES, SessionDep, verify_bearer
 from app.fur_discord import DiscordOAuthClient
 from app.schemas.generic import PaginatedResponse
 
@@ -76,7 +76,7 @@ async def callback(session: SessionDep, code: str, state: str) -> Player:
     """
     discord_token, _ = await oauth_client.get_access_token(code)
     token_string = state
-    token = session.exec(select(CkeyLinkToken).where( # type: ignore
+    token = session.exec(select(CkeyLinkToken).where(  # type: ignore
         CkeyLinkToken.token == token_string
     ).where(CkeyLinkToken.expiration_time > datetime.datetime.now())).first()
     if token is None:
@@ -137,8 +137,9 @@ async def get_player(session: SessionDep,
 
 @router.get("s/", status_code=status.HTTP_200_OK)
 async def get_players(session: SessionDep, request: Request, page: int = 1, page_size: int = 50) -> PaginatedResponse[Player]:
-    total = session.exec(select(func.count()).select_from(Player)).first()
-    selection = select(Player).offset((page-1)*page_size).limit(page_size)
+    total = session.exec(select(func.count()).select_from(
+        Player)).first()  
+    selection = select(Player).offset((page-1)*page_size).limit(page_size) # pylint: disable=not-callable # black magic
     items = session.exec(selection).all()
     return PaginatedResponse(
         items=items,
