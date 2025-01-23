@@ -13,16 +13,16 @@ DEFAULT_TOKEN_EXPIRATION_TIME = timedelta(minutes=5)
 class Player(SQLModel, table=True):
     id: int = Field(default=None, primary_key=True)
     # Actually is a pretty big int. Is way **too** big for a lot of software to handle
-    discord_id: str = Field(unique=True, index=True)
-    ckey: str | None = Field(unique=True, index=True)
+    discord_id: str = Field(max_length=32, unique=True, index=True)
+    ckey: str | None = Field(max_length=32, unique=True, index=True)
     # wizards_id: str | None = Field(unique=True, index=True) # Most likely is some kind of uuid
 
 
 class CkeyLinkToken(SQLModel, table=True):
     id: int = Field(default=None, primary_key=True)
-    ckey: str = Field(unique=True, index=True)
+    ckey: str = Field(max_length=32, unique=True, index=True)
     token: str = Field(
-        unique=True, default_factory=lambda: token_urlsafe(DEFAULT_TOKEN_LEN), index=True)
+        max_length=64, unique=True, default_factory=lambda: token_urlsafe(DEFAULT_TOKEN_LEN), index=True)
     expiration_time: datetime = Field(
         default_factory=lambda: datetime.now() + DEFAULT_TOKEN_EXPIRATION_TIME)
 
@@ -30,7 +30,7 @@ class CkeyLinkToken(SQLModel, table=True):
 class WhitelistBase(SQLModel):
     id: int = Field(default=None, primary_key=True)
     player_id: int = Field(foreign_key="player.id", index=True)
-    wl_type: str = Field(default="default")
+    wl_type: str = Field(max_length=32, default="default")
     admin_id: int = Field(foreign_key="player.id")
     issue_time: datetime = Field(default_factory=datetime.now)
     expiration_time: datetime = Field(
@@ -45,12 +45,12 @@ class Whitelist(WhitelistBase, table=True):
 class WhitelistBan(WhitelistBase, table=True):
     expiration_time: datetime = Field(
         default_factory=lambda: datetime.now() + DEFAULT_WHITELIST_BAN_EXPIRATION_TIME)
-    reason: str | None = Field()
+    reason: str | None = Field(max_length=1024)
 
 
 class Auth(SQLModel, table=True):
     id: int = Field(default=None, primary_key=True)
-    token_hash: str = Field(unique=True, index=True)
+    token_hash: str = Field(max_length=64, unique=True, index=True)
 
 
 class Donation(SQLModel, table=True):
