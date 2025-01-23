@@ -137,9 +137,9 @@ async def get_player(session: SessionDep,
 
 @router.get("s/", status_code=status.HTTP_200_OK)
 async def get_players(session: SessionDep, request: Request, page: int = 1, page_size: int = 50) -> PaginatedResponse[Player]:
-    total = session.exec(select(func.count()).select_from(
-        Player)).first()  
-    selection = select(Player).offset((page-1)*page_size).limit(page_size) # pylint: disable=not-callable # black magic
+    total = session.exec(select(func.count()).select_from(  # pylint: disable=not-callable # black magic
+        Player)).first()
+    selection = select(Player).offset((page-1)*page_size).limit(page_size)
     items = session.exec(selection).all()
     return PaginatedResponse(
         items=items,
