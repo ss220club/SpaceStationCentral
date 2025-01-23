@@ -1,14 +1,16 @@
 import datetime
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.responses import RedirectResponse
+from sqlalchemy import func
 from sqlmodel import Session, select
 
 from app.core.config import CONFIG
 from app.database.models import CkeyLinkToken, Player
 from app.deps import SessionDep, verify_bearer, BEARER_DEP_RESPONSES
 from app.fur_discord import DiscordOAuthClient
+from app.schemas.generic import PaginatedResponse
 
 logger = logging.getLogger("main-logger")
 
@@ -44,22 +46,6 @@ async def get_token_by_ckey(session: Session, ckey: str) -> str:
     return token_entry.token
 
 
-async def get_token_owner(session: Session, token: str) -> str:
-    """
-    Assumes that the token is valid
-    """
-    return session.exec(select(CkeyLinkToken).where(CkeyLinkToken.token == token)).first().ckey
-
-
-async def is_token_valid(session: Session, token: str):
-    """
-    Checks if the given state token is valid for the given ckey.
-    """
-    token_entry = session.exec(select(CkeyLinkToken).where(
-        CkeyLinkToken.token == token).where(CkeyLinkToken.expiration_time > datetime.datetime.now())).first()
-    return token_entry is not None
-
-
 @router.get("/login", status_code=status.HTTP_307_TEMPORARY_REDIRECT)
 async def login(token: str) -> RedirectResponse:
     """
@@ -90,13 +76,14 @@ async def callback(session: SessionDep, code: str, state: str) -> Player:
     """
     discord_token, _ = await oauth_client.get_access_token(code)
     token = state
-    if not await is_token_valid(session, token):
+    token = session.exec(select(CkeyLinkToken).where(
+        CkeyLinkToken.token == token
+        ).where(CkeyLinkToken.expiration_time > datetime.datetime.now())).first()
+    if token is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Wrong or expired token")
-    ckey = await get_token_owner(session, token)
-    if ckey is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Wrong or expired token")
+
+    ckey = token.ckey
     discord_user = await oauth_client.get_user(discord_token)
     discord_id = discord_user.id
 
@@ -108,6 +95,7 @@ async def callback(session: SessionDep, code: str, state: str) -> Player:
 
     link = Player(ckey=ckey, discord_id=discord_id)
     session.add(link)
+    session.delete(token)
     session.commit()
     session.refresh(link)
 
@@ -116,38 +104,34 @@ async def callback(session: SessionDep, code: str, state: str) -> Player:
     return link
 
 
-# TODO: Add paginationm just in case.
 @router.get(
-    "/players",
-    responses={
-        200: {"description": "List of matching players"},
-        400: {"description": "Invalid filter combination"},
-        404: {"description": "No players found"}
-    }
+    "/",
+    status_code=status.HTTP_200_OK,
 )
-async def get_players(session: SessionDep,
-                     ckey: str = None,
-                     discord_id: str = None,
-                     limit: int = 10) -> list[Player]:
+async def get_player(session: SessionDep,
+                      ckey: str | None = None,
+                      discord_id: str | None = None) -> Player:
     """
     Get players by ckey or discord_id, but not both.
     """
     selection = select(Player)
-    match ckey, discord_id:
-        case None, None:
-            pass
-        case None, discord_id:
-            selection = selection.where(Player.discord_id == discord_id)
-        case ckey, None:
-            selection = selection.where(Player.ckey == ckey)
-        case ckey, discord_id:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid filter combination"
-            )
+    if ckey is not None:
+        selection = selection.where(Player.ckey == ckey)
+    if discord_id is not None:
+        selection = selection.where(Player.discord_id == discord_id)
 
-    players = session.exec(selection).limit(limit).all()
-    if len(players) == 0:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail="No players found")
-    return players
+    return session.exec(selection).first()
+
+# /players/
+@router.get("s/", status_code=status.HTTP_200_OK)
+async def get_players(session: SessionDep, request: Request, page: int = 1, page_size: int = 50) -> PaginatedResponse[Player]:
+    total = session.exec(select(func.count()).select_from(Player)).first()
+    selection = select(Player).offset((page-1)*page_size).limit(page_size)
+    items = session.exec(selection).all()
+    return PaginatedResponse(
+        items=items,
+        total=total,
+        page=page,
+        page_size=page_size,
+        current_url=request.url
+    )

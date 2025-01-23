@@ -1,7 +1,8 @@
+from io import BufferedReader
 from pydantic import BaseModel, ValidationError
 import tomllib
 
-# Logging isnt working yet at this point, so uses prints
+# Logging isnt initialized yet at this point, so uses prints
 
 # pylint: disable=R0903
 
@@ -57,15 +58,19 @@ class Config(CustomBaseModel):
     general: General = General()
 
 
+def parse_config(f: BufferedReader) -> Config:
+    print("Using .config.toml")
+    data = tomllib.load(f)
+    config = Config.model_validate(data)
+    print("Checking defaults...")
+    config.log_defaults()
+    return config
+
+
 def load_config() -> Config:
     try:
         with open(".config.toml", "rb") as f:
-            print("Using .config.toml")
-            data = tomllib.load(f)
-            config = Config.model_validate(data)
-            config.log_defaults()
-            return config
-
+            return parse_config(f)
     except FileNotFoundError:
         print("Config file not found, using default.")
         return Config()
@@ -75,3 +80,4 @@ def load_config() -> Config:
 
 
 CONFIG = load_config()
+print("Config loaded.")
