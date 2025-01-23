@@ -130,5 +130,5 @@ async def create_whitelist_by_discord(session: SessionDep, new_wl: NewWhitelistD
         session,
         new_wl,
         lambda d: Player.discord_id == d.player_discord_id,
-        lambda d: Player.id == d.admin_discord_id
+        lambda d: Player.discord_id == d.admin_discord_id
     )
