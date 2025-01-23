@@ -33,14 +33,14 @@ def select_only_active_whitelists(selection: SelectOfScalar[Whitelist]):
             })
 async def get_whitelists(session: SessionDep,
                          request: Request,
-                         ckey: str = None,
-                         discord_id: str = None,
-                         wl_type: str = None,
+                         ckey: str | None = None,
+                         discord_id: str | None = None,
+                         wl_type: str | None = None,
                          active_only: bool = True,
                          page: int = 1,
                          page_size: int = 50) -> PaginatedResponse[Whitelist]:
     selection = select(Whitelist).join(
-        Player, Player.id == Whitelist.player_id)
+        Player, Player.id == Whitelist.player_id) # type: ignore 
 
     if active_only:
         selection = select_only_active_whitelists(selection)
@@ -49,9 +49,11 @@ async def get_whitelists(session: SessionDep,
     if discord_id is not None:
         selection = selection.where(Player.discord_id == discord_id)
     if wl_type is not None:
-        selection = selection.where(Whitelist.type == wl_type)
+        selection = selection.where(Whitelist.wl_type == wl_type)
 
-    total = session.exec(select(func.count()).select_from(selection)).first()
+    total = session.exec(
+        select(func.count()).select_from(selection)).first()  # TODO
+    
     selection = selection.offset((page-1)*page_size).limit(page_size)
     items = session.exec(selection).all()
 
@@ -78,13 +80,15 @@ async def create_whitelist_helper(
     admin_resolver: Callable[[Any], SelectOfScalar[Player]],
 ) -> Whitelist:
     """Core logic for creating whitelist entries"""
-    player = session.exec(select(Player).where(player_resolver(data))).first()
+    player = session.exec(select(Player).where(player_resolver(data))).first() # type: ignore
     if not player:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Player not found")
+        raise HTTPException(status.HTTP_404_NOT_FOUND,
+                            detail="Player not found")
 
-    admin = session.exec(select(Player).where(admin_resolver(data))).first()
+    admin = session.exec(select(Player).where(admin_resolver(data))).first() # type: ignore
     if not admin:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Admin not found")
+        raise HTTPException(status.HTTP_404_NOT_FOUND,
+                            detail="Admin not found")
 
     wl = Whitelist(
         player_id=player.id,
@@ -93,13 +97,15 @@ async def create_whitelist_helper(
         expiration_time=datetime.datetime.now() + datetime.timedelta(days=data.duration_days),
         valid=data.valid
     )
-    
+
     session.add(wl)
     session.commit()
     session.refresh(wl)
     return wl
 
 # Route definitions
+
+
 @router.post("/", status_code=status.HTTP_201_CREATED, responses=WHITELIST_POST_RESPONSES, dependencies=[Depends(verify_bearer)])
 async def create_whitelist(session: SessionDep, new_wl: NewWhitelistInternal) -> Whitelist:
     return await create_whitelist_helper(
@@ -109,6 +115,7 @@ async def create_whitelist(session: SessionDep, new_wl: NewWhitelistInternal) ->
         lambda d: Player.id == d.admin_id
     )
 
+
 @router.post("/by-ckey", status_code=status.HTTP_201_CREATED, responses=WHITELIST_POST_RESPONSES, dependencies=[Depends(verify_bearer)])
 async def create_whitelist_by_ckey(session: SessionDep, new_wl: NewWhitelistCkey) -> Whitelist:
     return await create_whitelist_helper(
@@ -117,6 +124,7 @@ async def create_whitelist_by_ckey(session: SessionDep, new_wl: NewWhitelistCkey
         lambda d: Player.ckey == d.player_ckey,
         lambda d: Player.ckey == d.admin_ckey
     )
+
 
 @router.post("/by-discord", status_code=status.HTTP_201_CREATED, responses=WHITELIST_POST_RESPONSES, dependencies=[Depends(verify_bearer)])
 async def create_whitelist_by_discord(session: SessionDep, new_wl: NewWhitelistDiscord) -> Whitelist:

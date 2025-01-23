@@ -97,7 +97,7 @@ def player_factory(db_session: Session) -> Generator[Player, None, None]:
         ckey = ckey if ckey is not None else generate_ckey()
         discord_id = discord_id if discord_id is not None else generate_discord_id()
         return create_player(db_session, ckey, discord_id)
-    yield factory
+    yield factory # type: ignore
 
 
 @pytest.fixture(scope="function")
@@ -141,7 +141,7 @@ def whitelist_factory(db_session: Session) -> Generator[Whitelist, None, None]:
                 admin: Player | None = None,
                 wl_type: str | None = None,
                 expiration_time: datetime.datetime | None = None,
-                valid: bool = None) -> Whitelist:
+                valid: bool = True) -> Whitelist:
         player = player if player is not None else create_player(
             db_session, generate_ckey(), generate_discord_id())
         admin = admin if admin is not None else create_player(
@@ -151,4 +151,4 @@ def whitelist_factory(db_session: Session) -> Generator[Whitelist, None, None]:
         ) + datetime.timedelta(days=random.randint(-777, 777))
         valid = valid if valid is not None else random.choice([True, False])
         return create_whitelist(db_session, player, admin, wl_type, expiration_time, valid)
-    yield factory
+    yield factory # type: ignore

@@ -75,9 +75,9 @@ async def callback(session: SessionDep, code: str, state: str) -> Player:
     to the database. It then returns the newly created Player object.
     """
     discord_token, _ = await oauth_client.get_access_token(code)
-    token = state
-    token = session.exec(select(CkeyLinkToken).where(
-        CkeyLinkToken.token == token
+    token_string = state
+    token = session.exec(select(CkeyLinkToken).where( # type: ignore
+        CkeyLinkToken.token == token_string
     ).where(CkeyLinkToken.expiration_time > datetime.datetime.now())).first()
     if token is None:
         raise HTTPException(
@@ -107,6 +107,10 @@ async def callback(session: SessionDep, code: str, state: str) -> Player:
 @router.get(
     "/",
     status_code=status.HTTP_200_OK,
+    responses={
+        status.HTTP_200_OK: {"description": "Player"},
+        status.HTTP_404_NOT_FOUND: {"description": "Player not found"},
+    }
 )
 async def get_player(session: SessionDep,
                      ckey: str | None = None,
@@ -120,7 +124,13 @@ async def get_player(session: SessionDep,
     if discord_id is not None:
         selection = selection.where(Player.discord_id == discord_id)
 
-    return session.exec(selection).first()
+    result = session.exec(selection).first()
+
+    if result is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Player not found")
+
+    return result
 
 # /players/
 

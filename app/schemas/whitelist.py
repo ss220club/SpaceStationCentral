@@ -4,6 +4,7 @@ from app.database.models import Player, Whitelist, WhitelistBase
 
 
 class NewWhitelistBase(BaseModel):
+    wl_type: str
     duration_days: int
     valid: bool = True
 
@@ -11,12 +12,15 @@ class NewWhitelistBase(BaseModel):
 class NewWhitelistBanBase(NewWhitelistBase):
     reason: str | None = None
 
+
 class NewWhitelistInternal(NewWhitelistBase):
     player_id: int
     admin_id: int
 
+
 class NewWhitelistBanInternal(NewWhitelistInternal, NewWhitelistBanBase):
     pass
+
 
 class NewWhitelistCkey(NewWhitelistBase):
     player_ckey: str

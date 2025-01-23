@@ -1,7 +1,7 @@
 from typing import List, Optional
 
 import aiohttp
-from aiocache import cached
+from aiocache import cached # type: ignore
 from fastapi import Depends, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
@@ -88,8 +88,8 @@ class DiscordOAuthClient:
         }
         async with aiohttp.ClientSession() as session:
             async with session.post(DISCORD_TOKEN_URL, data=payload) as resp:
-                resp = await resp.json()
-                return resp.get('access_token'), resp.get('refresh_token')
+                resp_json: dict = await resp.json()
+                return resp_json.get('access_token'), resp_json.get('refresh_token')
 
     async def refresh_access_token(self, refresh_token: str):
         payload = {
@@ -100,8 +100,8 @@ class DiscordOAuthClient:
         }
         async with aiohttp.ClientSession() as session:
             async with session.post(DISCORD_TOKEN_URL, data=payload) as resp:
-                resp = await resp.json()
-                return resp.get('access_token'), resp.get('refresh_token')
+                resp_json: dict = await resp.json()
+                return resp_json.get('access_token'), resp_json.get('refresh_token')
 
     async def user(self, request: Request):
         if "identify" not in self.scopes:
@@ -126,11 +126,12 @@ class DiscordOAuthClient:
         authorization_header = request.headers.get("Authorization")
         if not authorization_header:
             raise Unauthorized
-        authorization_header = authorization_header.split(" ")
-        if authorization_header[0] != "Bearer" or len(authorization_header) != 2:
+
+        authorization_header_parts = authorization_header.split(" ")
+        if authorization_header_parts[0] != "Bearer" or len(authorization_header_parts) != 2:
             raise Unauthorized
 
-        return authorization_header[1]
+        return authorization_header_parts[1]
 
     async def is_auntheficated(self, token: str):
         route = '/oauth2/@me'
@@ -140,6 +141,6 @@ class DiscordOAuthClient:
         except Unauthorized:
             return False
 
-    async def requires_authorization(self, bearer: Optional[HTTPAuthorizationCredentials] = Depends(HTTPBearer())):
+    async def requires_authorization(self, bearer: HTTPAuthorizationCredentials = Depends(HTTPBearer())):
         if not await self.is_auntheficated(bearer.credentials):
             raise Unauthorized

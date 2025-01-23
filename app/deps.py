@@ -1,7 +1,7 @@
 import hashlib
 from typing import Annotated, Generator
 
-from fastapi import Depends, HTTPException, Request
+from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlmodel import Session, select
 
@@ -24,15 +24,8 @@ def hash_bearer_token(token: str) -> str:
 
 
 BEARER_DEP_RESPONSES = {
-    401: {
+    status.HTTP_401_UNAUTHORIZED: {
         "description": "Invalid or missing bearer token",
-        "content": {
-            "application/json": {
-                "example": {
-                    "detail": "Invalid or missing bearer token"
-                }
-            }
-        }
     }
 }
 

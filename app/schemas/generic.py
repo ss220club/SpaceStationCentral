@@ -24,6 +24,6 @@ class PaginatedResponse(BaseModel, Generic[T]):
                 page=self.page-1, page_size=self.page_size
             ))
 
-    def __init__(self, *args, current_url: URL | None = None, **kwargs):
+    def __init__(self, *args, current_url: URL, **kwargs):
         super().__init__(*args, **kwargs)
         self.calculate_adjacent_pages(current_url)
