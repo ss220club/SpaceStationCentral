@@ -51,9 +51,7 @@ async def get_whitelists(session: SessionDep,
     if wl_type is not None:
         selection = selection.where(Whitelist.wl_type == wl_type)
 
-    total = session.exec(
-        select(func.count()).select_from(selection)).first()  # TODO
-    
+    total = session.exec(selection.with_only_columns(func.count())).first()
     selection = selection.offset((page-1)*page_size).limit(page_size)
     items = session.exec(selection).all()
 
