@@ -116,27 +116,38 @@ async def callback(session: SessionDep, code: str, state: str) -> Player:
     return link
 
 
-@router.get("/ckey")
-async def get_player_by_ckey(session: SessionDep, ckey: str) -> Player:
+# TODO: Add paginationm just in case.
+@router.get(
+    "/players",
+    responses={
+        200: {"description": "List of matching players"},
+        400: {"description": "Invalid filter combination"},
+        404: {"description": "No players found"}
+    }
+)
+async def get_players(session: SessionDep,
+                     ckey: str = None,
+                     discord_id: str = None,
+                     limit: int = 10) -> list[Player]:
     """
-    Retrieves a player by their ckey.
+    Get players by ckey or discord_id, but not both.
     """
+    selection = select(Player)
+    match ckey, discord_id:
+        case None, None:
+            pass
+        case None, discord_id:
+            selection = selection.where(Player.discord_id == discord_id)
+        case ckey, None:
+            selection = selection.where(Player.ckey == ckey)
+        case ckey, discord_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid filter combination"
+            )
 
-    player = session.exec(select(Player).where(Player.ckey == ckey)).first()
-    if player is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Player not found")
-    return player
-
-
-@router.get("/discord")
-async def get_player_by_discord(session: SessionDep, discord_id: str) -> Player:
-    """
-    Retrieves a player by their discord ID.
-    """
-    player = session.exec(select(Player).where(
-        Player.discord_id == discord_id)).first()
-    if player is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Player not found")
-    return player
+    players = session.exec(selection).limit(limit).all()
+    if len(players) == 0:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail="No players found")
+    return players
