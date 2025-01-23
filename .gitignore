@@ -1,8 +1,8 @@
-__pycache__
-.pytest_cache
-.venv
-.env
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.venv/
+.idea/
 *.log
-.idea
 .config.toml
 ci.db

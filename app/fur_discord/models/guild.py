@@ -6,7 +6,7 @@ from .role import Role
 
 
 class GuildPreview(BaseModel):
-    id: str = None
+    id: str | None = None
     name: str
     icon: Optional[str]
     owner: bool

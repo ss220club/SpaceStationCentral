@@ -4,6 +4,7 @@ from starlette.datastructures import URL
 
 T = TypeVar('T')
 
+
 class PaginatedResponse(BaseModel, Generic[T]):
     items: list[T]
     total: int
@@ -15,13 +16,14 @@ class PaginatedResponse(BaseModel, Generic[T]):
     def calculate_adjacent_pages(self, current_url: URL):
         if (self.page * self.page_size) < self.total:
             self.next_page = str(
-                current_url.include_query_params(page=self.page+1, page_size=self.page_size)
+                current_url.include_query_params(
+                    page=self.page+1, page_size=self.page_size)
             )
         if self.page > 1:
             self.previous_page = str(current_url.include_query_params(
                 page=self.page-1, page_size=self.page_size
             ))
 
-    def __init__(self, *args, current_url: str | None = None, **kwargs):
+    def __init__(self, *args, current_url: URL | None = None, **kwargs):
         super().__init__(*args, **kwargs)
         self.calculate_adjacent_pages(current_url)

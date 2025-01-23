@@ -16,7 +16,7 @@ class CustomBaseModel(BaseModel):
 
             if current_value == default_value:
                 print(f"Default used for '{field_name}'")
-            elif isinstance(current_value, BaseModel):
+            elif isinstance(current_value, CustomBaseModel):
                 # Recursively check nested Pydantic models
                 print(f"Checking nested model: {field_name}")
                 current_value.log_defaults()

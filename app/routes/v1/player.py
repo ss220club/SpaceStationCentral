@@ -78,7 +78,7 @@ async def callback(session: SessionDep, code: str, state: str) -> Player:
     token = state
     token = session.exec(select(CkeyLinkToken).where(
         CkeyLinkToken.token == token
-        ).where(CkeyLinkToken.expiration_time > datetime.datetime.now())).first()
+    ).where(CkeyLinkToken.expiration_time > datetime.datetime.now())).first()
     if token is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Wrong or expired token")
@@ -109,8 +109,8 @@ async def callback(session: SessionDep, code: str, state: str) -> Player:
     status_code=status.HTTP_200_OK,
 )
 async def get_player(session: SessionDep,
-                      ckey: str | None = None,
-                      discord_id: str | None = None) -> Player:
+                     ckey: str | None = None,
+                     discord_id: str | None = None) -> Player:
     """
     Get players by ckey or discord_id, but not both.
     """
@@ -123,6 +123,8 @@ async def get_player(session: SessionDep,
     return session.exec(selection).first()
 
 # /players/
+
+
 @router.get("s/", status_code=status.HTTP_200_OK)
 async def get_players(session: SessionDep, request: Request, page: int = 1, page_size: int = 50) -> PaginatedResponse[Player]:
     total = session.exec(select(func.count()).select_from(Player)).first()
