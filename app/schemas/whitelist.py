@@ -1,3 +1,4 @@
+import datetime
 from pydantic import BaseModel
 
 from app.database.models import Player, Whitelist, WhitelistBase
@@ -7,6 +8,9 @@ class NewWhitelistBase(BaseModel):
     wl_type: str
     duration_days: int
     valid: bool = True
+
+    def get_expiration_time(self) -> datetime.datetime:
+        return datetime.datetime.now() + datetime.timedelta(days=self.duration_days)
 
 
 class NewWhitelistBanBase(NewWhitelistBase):

@@ -13,8 +13,7 @@ from app.schemas.generic import PaginatedResponse
 from app.schemas.whitelist import (NewWhitelistBase, NewWhitelistCkey,
                                    NewWhitelistDiscord, NewWhitelistInternal)
 
-logger = logging.getLogger("main-logger")
-
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/whitelist", tags=["Whitelist"])
 ban_router = APIRouter(prefix="/ban", tags=["Whitelist", "Ban"])
@@ -25,6 +24,33 @@ def select_only_active_whitelists(selection: SelectOfScalar[Whitelist]):
         Whitelist.valid).where(
         Whitelist.expiration_time > datetime.datetime.now()
     )
+
+async def create_whitelist_helper(
+    session: SessionDep,
+    new_wl: NewWhitelistBase,
+    player_resolver: Callable[[Any], SelectOfScalar[Player]],
+    admin_resolver: Callable[[Any], SelectOfScalar[Player]],
+) -> Whitelist:
+    """Core logic for creating whitelist entries"""
+    player = session.exec(select(Player).where(player_resolver(new_wl))).first()
+    admin = session.exec(select(Player).where(admin_resolver(new_wl))).first()
+
+    if not player or not admin:
+        raise HTTPException(404, detail="Player or admin not found")
+
+    wl = Whitelist(
+        player_id=player.id,
+        admin_id=admin.id,
+        wl_type=new_wl.wl_type,
+        expiration_time=new_wl.get_expiration_time(),
+        valid=new_wl.valid
+    )
+
+    session.add(wl)
+    session.commit()
+    session.refresh(wl)
+    logger.info("Whitelist created: %s", wl.model_dump_json())
+    return wl
 
 
 @router.get("s/",  # /whitelists
@@ -71,36 +97,6 @@ WHITELIST_POST_RESPONSES = {
     status.HTTP_404_NOT_FOUND: {"description": "Player or admin not found"},
     status.HTTP_409_CONFLICT: {"description": "Player is banned from this type of whitelist."},
 }
-
-
-async def create_whitelist_helper(
-    session: SessionDep,
-    data: NewWhitelistBase,
-    player_resolver: Callable[[Any], SelectOfScalar[Player]],
-    admin_resolver: Callable[[Any], SelectOfScalar[Player]],
-) -> Whitelist:
-    """Core logic for creating whitelist entries"""
-    player = session.exec(select(Player).where(player_resolver(data))).first()
-    admin = session.exec(select(Player).where(admin_resolver(data))).first()
-
-    if not player or not admin:
-        raise HTTPException(404, detail="Player or admin not found")
-
-    wl = Whitelist(
-        player_id=player.id,
-        admin_id=admin.id,
-        wl_type=data.wl_type,
-        expiration_time=datetime.datetime.now() + datetime.timedelta(days=data.duration_days),
-        valid=data.valid
-    )
-
-    session.add(wl)
-    session.commit()
-    logger.info("Whitelist created: %s", wl)
-    session.refresh(wl)
-    return wl
-
-# Route definitions
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED, responses=WHITELIST_POST_RESPONSES, dependencies=[Depends(verify_bearer)])

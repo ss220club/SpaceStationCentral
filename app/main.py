@@ -5,12 +5,8 @@ from fastapi.concurrency import asynccontextmanager
 from fastapi.responses import FileResponse
 
 from app.core.config import CONFIG
-from app.core.logconfig import log_config
 from app.init import init
 from app.routes.v1.main_router import v1_router
-
-dictConfig(log_config)
-
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):

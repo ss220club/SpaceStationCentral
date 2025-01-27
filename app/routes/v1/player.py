@@ -12,7 +12,7 @@ from app.deps import BEARER_DEP_RESPONSES, SessionDep, verify_bearer
 from app.fur_discord import DiscordOAuthClient
 from app.schemas.generic import PaginatedResponse
 
-logger = logging.getLogger("main-logger")
+logger = logging.getLogger(__name__)
 
 
 router = APIRouter(prefix="/player", tags=["Player"])

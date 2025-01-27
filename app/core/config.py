@@ -1,9 +1,10 @@
+import logging
 import tomllib
 from io import BufferedReader
 
 from pydantic import BaseModel, ValidationError
 
-# Logging isnt initialized yet at this point, so uses prints
+logger = logging.getLogger(__name__)
 
 # pylint: disable=R0903
 
@@ -16,10 +17,17 @@ class CustomBaseModel(BaseModel):
             default_value = field_info.default
 
             if current_value == default_value:
-                print(f"Default used for '{field_name}'")
+                logger.info("Default used for '%s'", field_name)
             elif isinstance(current_value, CustomBaseModel):
-                print(f"Checking nested model: {field_name}")
+                logger.info("Checking nested model: %s", field_name)
                 current_value.log_defaults()
+
+class General(CustomBaseModel):
+    project_name: str = "FurFur Central"
+    project_desc: str = "API для объеденения множества серверов SS13 и SS14 в одну систему."
+    project_ver: str = "0.0.1"
+    endpoint_url: str = "http://127.0.0.1:8000"
+    favicon_path: str = "app/assets/favicon.png"
 
 
 class Database(CustomBaseModel):
@@ -44,25 +52,17 @@ class OAuth(CustomBaseModel):
     client_id: int = 12345678
 
 
-class General(CustomBaseModel):
-    project_name: str = "FurFur Central"
-    project_desc: str = "API для объеденения множества серверов SS13 и SS14 в одну систему."
-    project_ver: str = "0.0.1"
-    endpoint_url: str = "http://127.0.0.1:8000"
-    favicon_path: str = "app/assets/favicon.png"
-
-
 class Config(CustomBaseModel):
+    general: General = General()
     database: Database = Database()
     oauth: OAuth = OAuth()
-    general: General = General()
 
 
 def parse_config(f: BufferedReader) -> Config:
-    print("Using .config.toml")
+    logger.info("Using .config.toml")
     data = tomllib.load(f)
     config = Config.model_validate(data)
-    print("Checking defaults...")
+    logger.info("Checking defaults...")
     config.log_defaults()
     return config
 
@@ -72,12 +72,12 @@ def load_config() -> Config:
         with open(".config.toml", "rb") as f:
             return parse_config(f)
     except FileNotFoundError:
-        print("Config file not found, using default.")
+        logger.info("Config file not found, using default.")
         return Config()
     except (tomllib.TOMLDecodeError, ValidationError) as e:
-        print(f"Invalid config file: {e}")
+        logger.info("Invalid config file: %s", e)
         raise e
 
 
 CONFIG = load_config()
-print("Config loaded.")
+logger.info("Config loaded.")

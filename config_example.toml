@@ -13,7 +13,7 @@ needs_rebuild = true
 
 [OAuth]
 client_secret = "12345678"
-client_id = 12345678  # TOML supports integers without quotes
+client_id = 12345678
 
 [General]
 project_name = "FurFur Central"
