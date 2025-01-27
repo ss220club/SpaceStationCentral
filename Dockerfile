@@ -1,11 +1,11 @@
 FROM python:3.13
 
-WORKDIR / app
+COPY app/ /app
 
-COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+COPY requirements.txt /app
+RUN pip install --no-cache-dir -r app/requirements.txt
 
-COPY app / ./
+COPY log_config.yaml /app
 
-CMD ["uvicorn", "--host", "0.0.0.0", "--port", "8000", "--forwarded-allow-ips", "127.0.0.1,[::1],172.17.0.1", "main:app"]
+CMD ["uvicorn", "--host", "0.0.0.0", "--port", "8000", "--forwarded-allow-ips", "127.0.0.1,[::1],172.17.0.1", "--log-config", "app/log_config.yaml", "app.main:app"]
 EXPOSE 8000

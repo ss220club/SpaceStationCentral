@@ -1,5 +1,3 @@
-from logging.config import dictConfig
-
 from fastapi import FastAPI, status
 from fastapi.concurrency import asynccontextmanager
 from fastapi.responses import FileResponse

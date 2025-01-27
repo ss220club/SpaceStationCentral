@@ -4,6 +4,7 @@ pydantic ~= 2.8.2
 sqlalchemy ~= 2.0.33
 sqlmodel
 psycopg2
+mysql
 aiohttp
 aiocache
 pytest-mock

@@ -6,3 +6,16 @@ API для объеденения множества серверов SS13 и SS
 ## Конфиг
 
 Конфиг берется по пути `./.config.toml`. Пример можно посмотреть в файле `./config.toml.example`.
+Конфиг логов берется по пути `./.log_config.toml`.
+
+## Запуск
+
+```sh
+docker run -v $(pwd)/.config.toml:/.config.toml:ro \
+           -v $(pwd)/logs:/logs \
+           -d \
+           -p 8000:8000 \
+           --restart unless-stopped \
+           --name SpaceStationCentral \
+           ghcr.io/ss220club/spacestationcentral:latest
+```
