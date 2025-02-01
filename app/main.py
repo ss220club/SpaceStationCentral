@@ -1,6 +1,6 @@
 from fastapi import FastAPI, status
 from fastapi.concurrency import asynccontextmanager
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.core.config import CONFIG
@@ -22,12 +22,9 @@ app.mount("/nanoui", StaticFiles(directory="app/public/nanoui"), name="nanoui")
 app.include_router(v1_router)
 
 
-@app.get("/", status_code=status.HTTP_418_IM_A_TEAPOT)
-async def root() -> dict:
-    """
-    Hello! This is the root of the API. It's teapot-flavored.
-    """
-    return {"message": "I'm a teapot"}
+@app.get("/", status_code=status.HTTP_301_MOVED_PERMANENTLY)
+async def root() -> RedirectResponse:
+    return RedirectResponse(f"{CONFIG.general.endpoint_url}/nanoui/index.html")
 
 
 @app.get("/favicon.ico", include_in_schema=False)
