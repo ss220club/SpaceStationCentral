@@ -46,7 +46,7 @@ def verify_bearer(
         select(Auth).where(Auth.token_hash == hashed_token)
     ).first() is None:
         raise HTTPException(
-            status_code=401,
+            status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or missing bearer token",
             headers={"WWW-Authenticate": "Bearer"}
         )
