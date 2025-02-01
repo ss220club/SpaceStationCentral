@@ -9,7 +9,7 @@ from sqlmodel.sql.expression import SelectOfScalar
 
 from app.database.models import Player, Whitelist, WhitelistBan
 from app.deps import BEARER_DEP_RESPONSES, SessionDep, verify_bearer
-from app.schemas.generic import PaginatedResponse
+from app.schemas.generic import T, PaginatedResponse
 from app.schemas.whitelist import (NewWhitelistBanBase, NewWhitelistBanCkey,
                                    NewWhitelistBanDiscord, NewWhitelistBanInternal, NewWhitelistBase,
                                    NewWhitelistCkey, NewWhitelistDiscord,
@@ -65,6 +65,37 @@ async def create_whitelist_helper(
     logger.info("Whitelist created: %s", wl.model_dump_json())
     return wl
 
+def filter_whitelists(selection: SelectOfScalar[Whitelist],
+                      ckey: str | None = None,
+                      discord_id: str | None = None,
+                      wl_type: str | None = None,
+                      active_only: bool = True) -> SelectOfScalar[Whitelist]:
+    if active_only:
+        selection = select_only_active_whitelists(selection)
+    if ckey is not None:
+        selection = selection.where(Player.ckey == ckey)
+    if discord_id is not None:
+        selection = selection.where(Player.discord_id == discord_id)
+    if wl_type is not None:
+        selection = selection.where(Whitelist.wl_type == wl_type)
+    return selection
+
+def paginate_selection(session: SessionDep,
+                       selection: SelectOfScalar[T],
+                       request: Request,
+                       page: int,
+                       page_size: int) -> PaginatedResponse[T]:
+    total = session.exec(selection.with_only_columns(func.count())).first() # type: ignore # pylint: disable=not-callable
+    selection = selection.offset((page-1)*page_size).limit(page_size)
+    items = session.exec(selection).all()
+
+    return PaginatedResponse(
+        items=items,
+        total=total,
+        page=page,
+        page_size=page_size,
+        current_url=request.url,
+    )
 
 @router.get("s/",  # /whitelists
             status_code=status.HTTP_200_OK,
@@ -83,26 +114,32 @@ async def get_whitelists(session: SessionDep,
     selection = select(Whitelist).join(
         Player, Player.id == Whitelist.player_id)  # type: ignore
 
-    if active_only:
-        selection = select_only_active_whitelists(selection)
-    if ckey is not None:
-        selection = selection.where(Player.ckey == ckey)
-    if discord_id is not None:
-        selection = selection.where(Player.discord_id == discord_id)
-    if wl_type is not None:
-        selection = selection.where(Whitelist.wl_type == wl_type)
+    selection = filter_whitelists(selection, ckey, discord_id, wl_type, active_only)
 
-    total = session.exec(selection.with_only_columns(func.count())).first() # type: ignore # pylint: disable=not-callable
-    selection = selection.offset((page-1)*page_size).limit(page_size)
-    items = session.exec(selection).all()
+    return paginate_selection(session, selection, request, page, page_size)
 
-    return PaginatedResponse(
-        items=items,
-        total=total,
-        page=page,
-        page_size=page_size,
-        current_url=request.url,
-    )
+
+@router.get("/ckeys/",
+            status_code=status.HTTP_200_OK,
+            responses={
+                status.HTTP_200_OK: {"description": "Whitelistd ckeys"},
+                status.HTTP_400_BAD_REQUEST: {"description": "Invalid filter combination"},
+            })
+async def get_whitelisted_ckeys(session: SessionDep,
+                                 request: Request,
+                                 wl_type: str | None = None,
+                                 active_only: bool = True,
+                                 page: int = 1,
+                                 page_size: int = 50) -> PaginatedResponse[str]:
+    selection = select(Player.ckey).join(
+        Whitelist, Player.id == Whitelist.player_id).distinct()  # type: ignore
+
+    selection = filter_whitelists(selection,
+                                  wl_type=wl_type, 
+                                  active_only=active_only)
+
+    return paginate_selection(session, selection, request, page, page_size)
+
 
 WHITELIST_POST_RESPONSES = {
     **BEARER_DEP_RESPONSES,

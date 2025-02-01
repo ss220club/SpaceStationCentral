@@ -11,6 +11,7 @@ DEFAULT_TOKEN_EXPIRATION_TIME = timedelta(minutes=5)
 
 
 class Player(SQLModel, table=True):
+    __tablename__ = "player"
     id: int = Field(default=None, primary_key=True)
     # Actually is a pretty big int. Is way **too** big for a lot of software to handle
     discord_id: str = Field(max_length=32, unique=True, index=True)
@@ -19,6 +20,7 @@ class Player(SQLModel, table=True):
 
 
 class CkeyLinkToken(SQLModel, table=True):
+    __tablename__ = "ckey_link_token"
     id: int = Field(default=None, primary_key=True)
     ckey: str = Field(max_length=32, unique=True, index=True)
     token: str = Field(
@@ -39,21 +41,24 @@ class WhitelistBase(SQLModel):
 
 
 class Whitelist(WhitelistBase, table=True):
-    pass
+    __tablename__ = "whitelist"
 
 
 class WhitelistBan(WhitelistBase, table=True):
+    __tablename__ = "whitelist_ban"
     expiration_time: datetime = Field(
         default_factory=lambda: datetime.now() + DEFAULT_WHITELIST_BAN_EXPIRATION_TIME)
     reason: str | None = Field(max_length=1024)
 
 
 class Auth(SQLModel, table=True):
+    __tablename__ = "auth"
     id: int = Field(default=None, primary_key=True)
     token_hash: str = Field(max_length=64, unique=True, index=True)
 
 
 class Donation(SQLModel, table=True):
+    __tablename__ = "donation"
     id: int = Field(default=None, primary_key=True)
     player_id: int = Field(foreign_key="player.id", index=True)
     amount: int = Field()
