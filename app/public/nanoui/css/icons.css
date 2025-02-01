@@ -231,9 +231,9 @@
 .uiIcon16.icon-grip-solid-horizontal { background-position: -48px -224px; }
 .uiIcon16.icon-gripsmall-diagonal-se { background-position: -64px -224px; }
 .uiIcon16.icon-grip-diagonal-se { background-position: -80px -224px; }
-.uiIcon16.icon-batt_full { background-image: url(../images/c_max.gif); background-position: 0px 0px }
-.uiIcon16.icon-batt_disc { background-image: url(../images/c_discharging.gif); background-position: 0px 0px }
-.uiIcon16.icon-batt_chrg { background-image: url(../images/c_charging.gif); background-position: 0px 0px }
+.uiIcon16.icon-batt_full { background-image: url(https://github.com/ss220club/WyccerraBay220/blob/master/nano/images/c_max.gif); background-position: 0px 0px }
+.uiIcon16.icon-batt_disc { background-image: url(https://github.com/ss220club/WyccerraBay220/blob/master/nano/images/c_discharging.gif); background-position: 0px 0px }
+.uiIcon16.icon-batt_chrg { background-image: url(https://github.com/ss220club/WyccerraBay220/blob/master/nano/images/c_charging.gif); background-position: 0px 0px }
 .uiIcon16.icon-close64 { background-image: url(https://github.com/ss220club/WyccerraBay220/blob/master/nano/images/uiIcons64.png?raw=true); background-position: -128px -64px; width: 64px; height: 64px; }
 
 .mapIcon16 {
