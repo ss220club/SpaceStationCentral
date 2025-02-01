@@ -1,6 +1,7 @@
 from fastapi import FastAPI, status
 from fastapi.concurrency import asynccontextmanager
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.core.config import CONFIG
 from app.init import init
@@ -17,6 +18,7 @@ app = FastAPI(
     description=CONFIG.general.project_desc,
     lifespan=lifespan
 )
+app.mount("/nanoui", StaticFiles(directory="app/public/nanoui"), name="nanoui")
 app.include_router(v1_router)
 
 

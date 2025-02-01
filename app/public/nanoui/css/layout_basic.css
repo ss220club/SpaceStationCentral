@@ -1,0 +1,21 @@
+body {
+    background: #272727 url(https://github.com/ss220club/WyccerraBay220/blob/master/nano/images/uiBasicBackground.png?raw=true) 50% 0 repeat-x;
+}
+
+#uiContent {
+    clear: both;
+    padding: 8px;
+}
+
+#uiLoadingNotice {
+    position: relative;
+    background: url(https://github.com/ss220club/WyccerraBay220/blob/master/nano/images/uiNoticeBackground.jpg?raw=true) 50% 50%;
+    color: #000000;
+    font-size: 14px;
+    font-style: italic;
+    font-weight: bold;
+    padding: 3px 4px 3px 4px;
+    margin: 4px 0 4px 0;
+}
+
+
