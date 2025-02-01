@@ -18,7 +18,7 @@ from app.schemas.whitelist import (NewWhitelistBanBase, NewWhitelistBanCkey,
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/whitelist", tags=["Whitelist"])
-ban_router = APIRouter(prefix="/ban", tags=["Whitelist", "Ban"])
+ban_router = APIRouter(prefix="/ban", tags=["Whitelist Ban", "Ban"])
 
 
 def select_only_active_whitelists(selection: SelectOfScalar[Whitelist]):
@@ -97,7 +97,7 @@ def paginate_selection(session: SessionDep,
         current_url=request.url,
     )
 
-@router.get("s/",  # /whitelists
+@router.get("s",  # /whitelists
             status_code=status.HTTP_200_OK,
             responses={
                 status.HTTP_200_OK: {"description": "List of matching whitelists"},
@@ -119,7 +119,7 @@ async def get_whitelists(session: SessionDep,
     return paginate_selection(session, selection, request, page, page_size)
 
 
-@router.get("/ckeys/",
+@router.get("/ckeys",
             status_code=status.HTTP_200_OK,
             responses={
                 status.HTTP_200_OK: {"description": "Whitelistd ckeys"},
@@ -217,7 +217,7 @@ def create_ban_helper(session: SessionDep,
     logger.info("Whitelist ban created: %s", ban.model_dump_json())
     return ban
 
-@ban_router.get("s/", status_code=status.HTTP_200_OK)
+@ban_router.get("s", status_code=status.HTTP_200_OK)
 async def get_whitelist_bans(session: SessionDep,
                          request: Request,
                          ckey: str | None = None,
@@ -250,7 +250,7 @@ async def get_whitelist_bans(session: SessionDep,
         current_url=request.url,
     )
 
-@ban_router.post("/", status_code=status.HTTP_201_CREATED, responses=BAN_POST_RESPONSES, dependencies=[Depends(verify_bearer)])
+@ban_router.post("", status_code=status.HTTP_201_CREATED, responses=BAN_POST_RESPONSES, dependencies=[Depends(verify_bearer)])
 async def create_whitelist_ban(session: SessionDep, new_ban: NewWhitelistBanInternal, invalidate_wls: bool = True) -> WhitelistBan:
     return create_ban_helper(
         session,

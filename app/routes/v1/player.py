@@ -105,7 +105,7 @@ async def callback(session: SessionDep, code: str, state: str) -> Player:
 
 
 @router.get(
-    "/",
+    "",
     status_code=status.HTTP_200_OK,
     responses={
         status.HTTP_200_OK: {"description": "Player"},
@@ -135,7 +135,7 @@ async def get_player(session: SessionDep,
 # /players/
 
 
-@router.get("s/", status_code=status.HTTP_200_OK)
+@router.get("s", status_code=status.HTTP_200_OK)
 async def get_players(session: SessionDep, request: Request, page: int = 1, page_size: int = 50) -> PaginatedResponse[Player]:
     total = session.exec(select(func.count()).select_from(  # pylint: disable=not-callable # black magic
         Player)).first()
