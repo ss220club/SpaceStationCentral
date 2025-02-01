@@ -18,5 +18,4 @@ def init_db() -> None:
     if not CONFIG.database.needs_rebuild:
         return
 
-    SQLModel.metadata.drop_all(engine)
-    SQLModel.metadata.create_all(engine, checkfirst=False)
+    SQLModel.metadata.create_all(engine)
