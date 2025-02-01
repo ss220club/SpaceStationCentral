@@ -52,17 +52,17 @@ root:
 loggers:
     uvicorn:
         level: DEBUG
-        handlers: [console]
+        handlers: [console, debug_handler]
         propagate: false
 
     uvicorn.error:
         level: ERROR
-        handlers: [error_handler]
+        handlers: [console, error_handler]
         propagate: false
 
     uvicorn.access:
         level: INFO
-        handlers: [access_handler]
+        handlers: [console, access_handler]
         propagate: false
 
     watchfiles:
