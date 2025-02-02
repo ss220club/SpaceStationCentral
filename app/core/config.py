@@ -23,9 +23,9 @@ class CustomBaseModel(BaseModel):
                 current_value.log_defaults()
 
 class General(CustomBaseModel):
-    project_name: str = "FurFur Central"
-    project_desc: str = "API для объеденения множества серверов SS13 и SS14 в одну систему."
-    project_ver: str = "0.0.1"
+    project_name: str = "Space Station Central"
+    project_desc: str = "API для объеденения множества серверов SS13 и SS14 в одну систему. От него несет вульпой, но он работает."
+    project_ver: str = "0.1.0"
     endpoint_url: str = "http://127.0.0.1:8000"
     favicon_path: str = "app/assets/favicon.png"
 
