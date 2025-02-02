@@ -22,10 +22,3 @@ client_id = 12345678
 #project_ver = "0.1.0"
 endpoint_url = "http://127.0.0.1:8000"
 favicon_path = "app/assets/favicon.png"
-
-[game]
-# Gives these wls on donation of specific tier or above
-donation_wls = ["prime", "devtest"]
-paid_wl_min_tier = 2
-# This user will be the admin for donation wls. Uses internal user id
-bot_id = 1

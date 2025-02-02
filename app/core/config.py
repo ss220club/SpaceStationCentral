@@ -52,16 +52,10 @@ class OAuth(CustomBaseModel):
     client_id: int = 12345678
 
 
-class Game(CustomBaseModel):
-    donation_wls: list[str] = ["prime", "devtest"]
-    paid_wl_min_tier: int = 2
-    bot_id: int = 1
-
 class Config(CustomBaseModel):
     general: General = General()
     database: Database = Database()
     oauth: OAuth = OAuth()
-    game: Game = Game()
 
 
 def parse_config(f: BufferedReader) -> Config:

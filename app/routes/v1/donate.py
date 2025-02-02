@@ -24,29 +24,6 @@ def filter_donations(selection: SelectOfScalar[Donation], ckey: str | None = Non
         selection = selection.where(Donation.valid)
     return selection
 
-async def handle_donation(session: SessionDep, donation: Donation):
-    if donation.tier < CONFIG.game.paid_wl_min_tier:
-        return
-    # Auto wls on donation
-    paid_wl_types = CONFIG.game.donation_wls
-    for paid_wl in paid_wl_types:
-        new_wl = NewWhitelistInternal(
-            player_id=donation.player_id,
-            wl_type=paid_wl,
-            admin_id=CONFIG.game.bot_id, # system user or idk
-            duration_days=DEFAULT_DONATION_EXPIRATION_TIME.days,
-            valid=True
-        )
-        try:
-            wl = await create_whitelist(session, new_wl, ignore_bans=False)
-            logger.info("Player %s got wl %s via donation %s.", donation.player_id, wl.id, donation.id)
-        except HTTPException as e:
-            if e.status_code == status.HTTP_409_CONFLICT:
-                logger.debug("Player %s couldnt get wl to %s via donation %s due to wl ban.", donation.player_id, paid_wl, donation.id)
-                continue
-            raise e
-            
-
 
 @router.get("", status_code=status.HTTP_200_OK)
 async def get_donations(session: SessionDep,
@@ -70,8 +47,6 @@ async def create_donation(session: SessionDep, donation: Donation) -> Donation:
     session.refresh(donation)
 
     logger.info("Donation created: %s", donation.model_dump_json())
-
-    await handle_donation(session, donation)
 
     return donation
 
