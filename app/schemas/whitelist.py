@@ -1,9 +1,6 @@
 import datetime
 from pydantic import BaseModel
 
-from app.database.models import Player, Whitelist, WhitelistBase
-
-
 class NewWhitelistBase(BaseModel):
     wl_type: str
     duration_days: int

@@ -5,6 +5,7 @@ from sqlmodel import Field, SQLModel
 
 DEFAULT_WHITELIST_EXPIRATION_TIME = timedelta(days=30)
 DEFAULT_WHITELIST_BAN_EXPIRATION_TIME = timedelta(days=14)
+DEFAULT_DONATION_EXPIRATION_TIME = timedelta(days=30)
 
 DEFAULT_TOKEN_LEN = 32
 DEFAULT_TOKEN_EXPIRATION_TIME = timedelta(minutes=5)
@@ -61,5 +62,8 @@ class Donation(SQLModel, table=True):
     __tablename__ = "donation"
     id: int = Field(default=None, primary_key=True)
     player_id: int = Field(foreign_key="player.id", index=True)
-    amount: int = Field()
-    date: datetime = Field(default_factory=datetime.now)
+    tier: int = Field()
+    issue_time: datetime = Field(default_factory=datetime.now)
+    expiration_time: datetime = Field(
+        default_factory=lambda: datetime.now() + DEFAULT_DONATION_EXPIRATION_TIME)
+    valid: bool = Field(default=True)

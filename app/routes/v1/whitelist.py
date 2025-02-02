@@ -9,7 +9,7 @@ from sqlmodel.sql.expression import SelectOfScalar
 
 from app.database.models import Player, Whitelist, WhitelistBan
 from app.deps import BEARER_DEP_RESPONSES, SessionDep, verify_bearer
-from app.schemas.generic import T, PaginatedResponse
+from app.schemas.generic import PaginatedResponse, paginate_selection
 from app.schemas.whitelist import (NewWhitelistBanBase, NewWhitelistBanCkey,
                                    NewWhitelistBanDiscord, NewWhitelistBanInternal, NewWhitelistBase,
                                    NewWhitelistCkey, NewWhitelistDiscord,
@@ -25,6 +25,12 @@ def select_only_active_whitelists(selection: SelectOfScalar[Whitelist]):
     return selection.where(
         Whitelist.valid).where(
         Whitelist.expiration_time > datetime.datetime.now()
+    )
+
+def select_only_active_whitelist_bans(selection: SelectOfScalar[WhitelistBan]):
+    return selection.where(
+        WhitelistBan.valid).where(
+        WhitelistBan.expiration_time > datetime.datetime.now()
     )
 
 WHITELIST_TYPES_T = NewWhitelistCkey | NewWhitelistDiscord | NewWhitelistInternal
@@ -44,7 +50,7 @@ async def create_whitelist_helper(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Player or admin not found")
 
     if not ignore_bans and session.exec(
-                select_only_active_whitelists(
+                select_only_active_whitelist_bans(
                     select(WhitelistBan)
                     .where(WhitelistBan.player_id == player.id)
                     .where(WhitelistBan.wl_type == new_wl.wl_type)
@@ -53,9 +59,7 @@ async def create_whitelist_helper(
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Player is banned from this type of whitelist.")
 
     wl = Whitelist(
-        **new_wl.model_dump(),
-        player_id=player.id,
-        admin_id=admin.id,
+        **{**new_wl.model_dump(), "player_id": player.id, "admin_id": admin.id},
         expiration_time=new_wl.get_expiration_time(),
     )
 
@@ -80,22 +84,20 @@ def filter_whitelists(selection: SelectOfScalar[Whitelist],
         selection = selection.where(Whitelist.wl_type == wl_type)
     return selection
 
-def paginate_selection(session: SessionDep,
-                       selection: SelectOfScalar[T],
-                       request: Request,
-                       page: int,
-                       page_size: int) -> PaginatedResponse[T]:
-    total = session.exec(selection.with_only_columns(func.count())).first() # type: ignore # pylint: disable=not-callable
-    selection = selection.offset((page-1)*page_size).limit(page_size)
-    items = session.exec(selection).all()
-
-    return PaginatedResponse(
-        items=items,
-        total=total,
-        page=page,
-        page_size=page_size,
-        current_url=request.url,
-    )
+def filter_whitelist_bans(selection: SelectOfScalar[WhitelistBan],
+                          ckey: str | None = None,
+                          discord_id: str | None = None,
+                          wl_type: str | None = None,
+                          active_only: bool = True) -> SelectOfScalar[WhitelistBan]:
+    if active_only:
+        selection = select_only_active_whitelist_bans(selection)
+    if ckey is not None:
+        selection = selection.where(Player.ckey == ckey)
+    if discord_id is not None:
+        selection = selection.where(Player.discord_id == discord_id)
+    if wl_type is not None:
+        selection = selection.where(WhitelistBan.wl_type == wl_type)
+    return selection
 
 @router.get("s",  # /whitelists
             status_code=status.HTTP_200_OK,
@@ -229,14 +231,7 @@ async def get_whitelist_bans(session: SessionDep,
     selection = select(WhitelistBan).join(
         Player, Player.id == WhitelistBan.player_id)  # type: ignore
 
-    if active_only:
-        selection = select_only_active_whitelists(selection)
-    if ckey is not None:
-        selection = selection.where(Player.ckey == ckey)
-    if discord_id is not None:
-        selection = selection.where(Player.discord_id == discord_id)
-    if wl_type is not None:
-        selection = selection.where(WhitelistBan.wl_type == wl_type)
+    selection = filter_whitelist_bans(selection, ckey, discord_id, wl_type, active_only)
 
     total = session.exec(selection.with_only_columns(func.count())).first() # type: ignore # pylint: disable=not-callable
     selection = selection.offset((page-1)*page_size).limit(page_size)
