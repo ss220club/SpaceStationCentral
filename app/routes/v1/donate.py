@@ -1,3 +1,4 @@
+import datetime
 import logging
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlmodel import select
@@ -15,28 +16,28 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/donate", tags=["Donate"])
 
-def filter_donations(selection: SelectOfScalar[Donation], ckey: str | None = None, discord_id: str | None = None, valid_only: bool = True) -> SelectOfScalar[Donation]:
+def filter_donations(selection: SelectOfScalar[Donation], ckey: str | None = None, discord_id: str | None = None, active_only: bool = True) -> SelectOfScalar[Donation]:
     if ckey:
         selection = selection.where(Player.ckey == ckey)
     if discord_id:
         selection = selection.where(Player.discord_id == discord_id)
-    if valid_only:
-        selection = selection.where(Donation.valid)
+    if active_only:
+        selection = selection.where(Donation.valid).where(Donation.expiration_time > datetime.datetime.now())
     return selection
 
 
-@router.get("", status_code=status.HTTP_200_OK)
+@router.get("s", status_code=status.HTTP_200_OK)
 async def get_donations(session: SessionDep,
                         request: Request,
                         ckey: str | None = None,
                         discord_id: str | None = None,
-                        valid_only: bool = True,
+                        active_only: bool = True,
                         page: int = 1,
                         page_size: int = 50) -> PaginatedResponse[Donation]:
     selection = select(Donation).join(
         Player, Player.id == Donation.player_id)
     
-    selection = filter_donations(selection, ckey, discord_id, valid_only)
+    selection = filter_donations(selection, ckey, discord_id, active_only)
 
     return paginate_selection(session, selection, request, page, page_size)
 
@@ -56,9 +57,9 @@ WHITELIST_POST_RESPONSES = {
 }
 
 @router.post("/by-discord", status_code=status.HTTP_201_CREATED, dependencies=[Depends(verify_bearer)], responses=WHITELIST_POST_RESPONSES)
-async def create_donation_by_discord(session: SessionDep, donation: NewDonationDiscord) -> Donation:
+async def create_donation_by_discord(session: SessionDep, new_donation: NewDonationDiscord) -> Donation:
     player = session.exec(
-        select(Player).where(Player.discord_id == donation.discord_id)
+        select(Player).where(Player.discord_id == new_donation.discord_id)
     ).first()
 
     if player is None:
@@ -67,7 +68,7 @@ async def create_donation_by_discord(session: SessionDep, donation: NewDonationD
 
     donation = Donation(
         player_id=player.id,
-        tier=donation.tier
+        tier=new_donation.tier
         )
     
     return await create_donation(session, donation)
