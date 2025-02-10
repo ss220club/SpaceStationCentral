@@ -25,7 +25,7 @@ app.include_router(v1_router)
 
 @app.get("/", status_code=status.HTTP_301_MOVED_PERMANENTLY)
 async def root() -> RedirectResponse:
-    return RedirectResponse(f"{CONFIG.general.endpoint_url}/nanoui/index.html")
+    return RedirectResponse("/nanoui/index.html")
 
 
 @app.get("/favicon.ico", include_in_schema=False)
