@@ -1,8 +1,11 @@
 import datetime
 from typing import TYPE_CHECKING, Callable
+
 from pydantic import BaseModel
 from sqlmodel.sql.expression import SelectOfScalar
+
 from app.database.models import Player
+
 
 class NewWhitelistBase(BaseModel):
     wl_type: str
@@ -43,8 +46,10 @@ class NewWhitelistDiscord(NewWhitelistBase):
 class NewWhitelistBanDiscord(NewWhitelistDiscord, NewWhitelistBanBase):
     pass
 
+
 NEW_WHITELIST_TYPES = NewWhitelistInternal | NewWhitelistDiscord | NewWhitelistCkey
 NEW_WHITELIST_BAN_TYPES = NewWhitelistBanInternal | NewWhitelistBanDiscord | NewWhitelistBanCkey
+
 
 def resolve_whitelist_type(new_wl: NEW_WHITELIST_TYPES) -> tuple[Callable[[NEW_WHITELIST_TYPES], SelectOfScalar], Callable[[NEW_WHITELIST_TYPES], SelectOfScalar]]:
     match new_wl:
@@ -55,7 +60,9 @@ def resolve_whitelist_type(new_wl: NEW_WHITELIST_TYPES) -> tuple[Callable[[NEW_W
         case NewWhitelistCkey():
             return (lambda new_wl: Player.ckey == new_wl.player_ckey, lambda new_wl: Player.ckey == new_wl.admin_ckey)
         case _:
-            raise TypeError("Someone added a new whitelist type without a case in resolve_whitelist_type")
+            raise TypeError(
+                "Someone added a new whitelist type without a case in resolve_whitelist_type")
+
 
 class WhitelistPatch(BaseModel):
     valid: bool | None = None

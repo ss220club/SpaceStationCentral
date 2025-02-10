@@ -9,7 +9,9 @@ from sqlmodel.sql.expression import SelectOfScalar
 from app.database.models import Player, Whitelist, WhitelistBan
 from app.deps import BEARER_DEP_RESPONSES, SessionDep, verify_bearer
 from app.schemas.generic import PaginatedResponse, paginate_selection
-from app.schemas.whitelist import (NEW_WHITELIST_BAN_TYPES, NEW_WHITELIST_TYPES, WhitelistPatch, resolve_whitelist_type)
+from app.schemas.whitelist import (NEW_WHITELIST_BAN_TYPES,
+                                   NEW_WHITELIST_TYPES, WhitelistPatch,
+                                   resolve_whitelist_type)
 
 logger = logging.getLogger(__name__)
 
@@ -58,13 +60,14 @@ def filter_whitelist_bans(selection: SelectOfScalar[WhitelistBan],
 
 # region Get
 
+
 @whitelist_router.get("/{id}",
                       status_code=status.HTTP_200_OK,
                       responses={
                           status.HTTP_200_OK: {"description": "Whitelist"},
                           status.HTTP_404_NOT_FOUND: {"description": "Whitelist not found"},
                       })
-def get_whitelist(session, id):
+def get_whitelist(session, id): # pylint: disable=redefined-builtin
     wl = session.exec(select(Whitelist).where(Whitelist.id == id)).first()
 
     if wl is None:
@@ -72,6 +75,7 @@ def get_whitelist(session, id):
                             detail="Whitelist not found")
 
     return wl
+
 
 @whitelist_router.get("",
                       status_code=status.HTTP_200_OK,
@@ -135,7 +139,8 @@ WHITELIST_POST_RESPONSES = {
 async def create_whitelist(session: SessionDep, new_wl: NEW_WHITELIST_TYPES, ignore_bans: bool = False) -> Whitelist:
     player_resolver, admin_resolver = resolve_whitelist_type(new_wl)
 
-    player = session.exec(select(Player).where(player_resolver(new_wl))).first()
+    player = session.exec(select(Player).where(
+        player_resolver(new_wl))).first()
     admin = session.exec(select(Player).where(admin_resolver(new_wl))).first()
 
     if player is None or admin is None:
@@ -144,20 +149,20 @@ async def create_whitelist(session: SessionDep, new_wl: NEW_WHITELIST_TYPES, ign
 
     if not ignore_bans:
         selection = select(WhitelistBan).where(
-             WhitelistBan.player_id == player.id).where(
-                 WhitelistBan.wl_type == new_wl.wl_type)
+            WhitelistBan.player_id == player.id).where(
+            WhitelistBan.wl_type == new_wl.wl_type)
         selection = select_only_active_whitelist_bans(selection)
 
         if session.exec(selection).first() is not None:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT,
                                 detail="Player is banned from this type of whitelist.")
 
-    wl = Whitelist(**new_wl.model_dump(), player_id=player.id, admin_id=admin.id)
+    wl = Whitelist(**new_wl.model_dump(),
+                   player_id=player.id, admin_id=admin.id)
     session.add(wl)
     session.commit()
     session.refresh(wl)
     return wl
-    
 
 
 # endregion
@@ -203,19 +208,21 @@ def select_only_active_whitelist_bans(selection: SelectOfScalar[WhitelistBan]):
 
 
 @whitelist_ban_router.get("/{id}",
-                      status_code=status.HTTP_200_OK,
-                      responses={
-                          status.HTTP_200_OK: {"description": "Whitelist"},
-                          status.HTTP_404_NOT_FOUND: {"description": "Whitelist not found"},
-                      })
-def get_whitelist_ban(session, id):
-    wl_ban = session.exec(select(WhitelistBan).where(WhitelistBan.id == id)).first()
+                          status_code=status.HTTP_200_OK,
+                          responses={
+                              status.HTTP_200_OK: {"description": "Whitelist"},
+                              status.HTTP_404_NOT_FOUND: {"description": "Whitelist not found"},
+                          })
+def get_whitelist_ban(session, id): # pylint: disable=redefined-builtin
+    wl_ban = session.exec(select(WhitelistBan).where(
+        WhitelistBan.id == id)).first()
 
     if wl_ban is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail="Whitelist ban not found")
 
     return wl_ban
+
 
 @whitelist_ban_router.get("", status_code=status.HTTP_200_OK)
 async def get_whitelist_bans(session: SessionDep,
@@ -254,6 +261,7 @@ BAN_POST_RESPONSES = {
     status.HTTP_404_NOT_FOUND: {"description": "Player or admin not found"},
 }
 
+
 @whitelist_ban_router.post("",
                            status_code=status.HTTP_201_CREATED,
                            responses=BAN_POST_RESPONSES,
@@ -262,7 +270,8 @@ async def create_whitelist_ban(session: SessionDep,
                                new_ban: NEW_WHITELIST_BAN_TYPES,
                                invalidate_wls: bool = True) -> WhitelistBan:
     player_resolver, admin_resolver = resolve_whitelist_type(new_ban)
-    player = session.exec(select(Player).where(player_resolver(new_ban))).first()
+    player = session.exec(select(Player).where(
+        player_resolver(new_ban))).first()
     admin = session.exec(select(Player).where(admin_resolver(new_ban))).first()
 
     if player is None or admin is None:
@@ -282,7 +291,8 @@ async def create_whitelist_ban(session: SessionDep,
             )
         )
 
-    ban = WhitelistBan(**new_ban.model_dump(), player_id=player.id, admin_id=admin.id)
+    ban = WhitelistBan(**new_ban.model_dump(),
+                       player_id=player.id, admin_id=admin.id)
     session.add(ban)
     session.commit()
     session.refresh(ban)
@@ -299,10 +309,10 @@ WHITELIST_BAN_PATCH_RESPONSES = {
 
 
 @whitelist_ban_router.patch("/{id}",
-                        status_code=status.HTTP_200_OK,
-                        responses=WHITELIST_PATCH_RESPONSES,
-                        dependencies=[Depends(verify_bearer)])
-async def update_whitelist(session: SessionDep, id: int, wl_ban_patch: WhitelistPatch) -> WhitelistBan:  # pylint: disable=redefined-builtin
+                            status_code=status.HTTP_200_OK,
+                            responses=WHITELIST_PATCH_RESPONSES,
+                            dependencies=[Depends(verify_bearer)])
+async def update_whitelist_ban(session: SessionDep, id: int, wl_ban_patch: WhitelistPatch) -> WhitelistBan:  # pylint: disable=redefined-builtin
     ban = get_whitelist_ban(session, id)
     update_data = wl_ban_patch.model_dump(exclude_unset=True)
     for key, value in update_data.items():

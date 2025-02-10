@@ -1,10 +1,9 @@
 import datetime
 import logging
-from typing import Annotated
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import RedirectResponse
-from sqlalchemy import func, update
+from sqlalchemy import func
 from sqlmodel import Session, select
 
 from app.core.config import CONFIG
@@ -194,6 +193,6 @@ async def update_player(session: SessionDep, id: int, player_patch: PlayerPatch)
     session.commit()
     session.refresh(player)
     return player
-    
+
 
 # endregion

@@ -1,9 +1,9 @@
 from typing import Generic, TypeVar
 
 from fastapi import Request
-from sqlmodel.sql.expression import SelectOfScalar
-from sqlalchemy import func
 from pydantic import BaseModel
+from sqlalchemy import func
+from sqlmodel.sql.expression import SelectOfScalar
 from starlette.datastructures import URL
 
 from app.deps import SessionDep
