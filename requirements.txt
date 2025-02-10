@@ -11,3 +11,5 @@ pytest-mock
 pytest-asyncio
 pytest
 pylint
+autopep8
+isort

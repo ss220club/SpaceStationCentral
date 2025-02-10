@@ -22,7 +22,7 @@ oauth_router = APIRouter(prefix="/oauth", tags=["OAuth"])
 CALLBACK_PATH = "/discord_oa"
 oauth_client = DiscordOAuthClient(
     CONFIG.oauth.client_id, CONFIG.oauth.client_secret, f"{
-        CONFIG.general.endpoint_url}{oauth_router.prefix}{CALLBACK_PATH}"
+        CONFIG.oauth.endpoint_url}{CALLBACK_PATH}"
 )
 
 
