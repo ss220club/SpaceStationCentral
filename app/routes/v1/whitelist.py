@@ -61,22 +61,6 @@ def filter_whitelist_bans(selection: SelectOfScalar[WhitelistBan],
 # region Get
 
 
-@whitelist_router.get("/{id}",
-                      status_code=status.HTTP_200_OK,
-                      responses={
-                          status.HTTP_200_OK: {"description": "Whitelist"},
-                          status.HTTP_404_NOT_FOUND: {"description": "Whitelist not found"},
-                      })
-def get_whitelist(session, id): # pylint: disable=redefined-builtin
-    wl = session.exec(select(Whitelist).where(Whitelist.id == id)).first()
-
-    if wl is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail="Whitelist not found")
-
-    return wl
-
-
 @whitelist_router.get("",
                       status_code=status.HTTP_200_OK,
                       responses={
@@ -103,8 +87,7 @@ async def get_whitelists(session: SessionDep,
 @whitelist_router.get("/ckeys",
                       status_code=status.HTTP_200_OK,
                       responses={
-                          status.HTTP_200_OK: {"description": "Whitelistd ckeys"},
-                          status.HTTP_400_BAD_REQUEST: {"description": "Invalid filter combination"},
+                          status.HTTP_200_OK: {"description": "Whitelisted ckeys"},
                       })
 async def get_whitelisted_ckeys(session: SessionDep,
                                 request: Request,
@@ -120,6 +103,23 @@ async def get_whitelisted_ckeys(session: SessionDep,
                                   active_only=active_only)
 
     return paginate_selection(session, selection, request, page, page_size)
+
+
+@whitelist_router.get("/{id}",
+                      status_code=status.HTTP_200_OK,
+                      responses={
+                          status.HTTP_200_OK: {"description": "Whitelist"},
+                          status.HTTP_404_NOT_FOUND: {"description": "Whitelist not found"},
+                      })
+def get_whitelist(session: SessionDep,
+                  id: int): # pylint: disable=redefined-builtin
+    wl = session.exec(select(Whitelist).where(Whitelist.id == id)).first()
+
+    if wl is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail="Whitelist not found")
+
+    return wl
 
 # endregion
 # region Post
@@ -206,24 +206,6 @@ def select_only_active_whitelist_bans(selection: SelectOfScalar[WhitelistBan]):
 
 # region Get
 
-
-@whitelist_ban_router.get("/{id}",
-                          status_code=status.HTTP_200_OK,
-                          responses={
-                              status.HTTP_200_OK: {"description": "Whitelist"},
-                              status.HTTP_404_NOT_FOUND: {"description": "Whitelist not found"},
-                          })
-def get_whitelist_ban(session, id): # pylint: disable=redefined-builtin
-    wl_ban = session.exec(select(WhitelistBan).where(
-        WhitelistBan.id == id)).first()
-
-    if wl_ban is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail="Whitelist ban not found")
-
-    return wl_ban
-
-
 @whitelist_ban_router.get("", status_code=status.HTTP_200_OK)
 async def get_whitelist_bans(session: SessionDep,
                              request: Request,
@@ -251,6 +233,23 @@ async def get_whitelist_bans(session: SessionDep,
         page_size=page_size,
         current_url=request.url,
     )
+
+
+@whitelist_ban_router.get("/{id}",
+                          status_code=status.HTTP_200_OK,
+                          responses={
+                              status.HTTP_200_OK: {"description": "Whitelist"},
+                              status.HTTP_404_NOT_FOUND: {"description": "Whitelist not found"},
+                          })
+def get_whitelist_ban(session, id): # pylint: disable=redefined-builtin
+    wl_ban = session.exec(select(WhitelistBan).where(
+        WhitelistBan.id == id)).first()
+
+    if wl_ban is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail="Whitelist ban not found")
+
+    return wl_ban
 
 # endregion
 # region Post

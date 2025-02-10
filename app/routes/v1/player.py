@@ -110,25 +110,6 @@ async def callback(session: SessionDep, code: str, state: str) -> Player:
 
 player_router = APIRouter(prefix="/players", tags=["Player"])
 
-
-@player_router.get(
-    "/{id}",
-    status_code=status.HTTP_200_OK,
-    responses={
-        status.HTTP_200_OK: {"description": "Player"},
-        status.HTTP_404_NOT_FOUND: {"description": "Player not found"},
-    }
-)
-async def get_player_by_id(session: SessionDep, id: int) -> Player:  # pylint: disable=redefined-builtin
-    result = session.exec(select(Player).where(Player.id == id)).first()
-
-    if result is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Player not found")
-
-    return result
-
-
 @player_router.get(
     "/discord/{discord_id}",
     status_code=status.HTTP_200_OK,
@@ -180,6 +161,24 @@ async def get_players(session: SessionDep, request: Request, page: int = 1, page
         page_size=page_size,
         current_url=request.url
     )
+
+
+@player_router.get(
+    "/{id}",
+    status_code=status.HTTP_200_OK,
+    responses={
+        status.HTTP_200_OK: {"description": "Player"},
+        status.HTTP_404_NOT_FOUND: {"description": "Player not found"},
+    }
+)
+async def get_player_by_id(session: SessionDep, id: int) -> Player:  # pylint: disable=redefined-builtin
+    result = session.exec(select(Player).where(Player.id == id)).first()
+
+    if result is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Player not found")
+
+    return result
 
 
 @player_router.patch("/{id}", status_code=status.HTTP_200_OK, responses=BEARER_DEP_RESPONSES, dependencies=[Depends(verify_bearer)])
