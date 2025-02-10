@@ -1,6 +1,7 @@
 import datetime
 from pydantic import BaseModel
 
+
 class NewWhitelistBase(BaseModel):
     wl_type: str
     duration_days: int

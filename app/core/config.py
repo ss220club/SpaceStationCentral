@@ -22,6 +22,7 @@ class CustomBaseModel(BaseModel):
                 logger.info("Checking nested model: %s", field_name)
                 current_value.log_defaults()
 
+
 class General(CustomBaseModel):
     project_name: str = "Space Station Central"
     project_desc: str = "API для объеденения множества серверов SS13 и SS14 в одну систему. От него несет вульпой, но он работает."

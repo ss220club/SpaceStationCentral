@@ -23,23 +23,25 @@ class PaginatedResponse(BaseModel, Generic[T]):
         if (self.page * self.page_size) < self.total:
             self.next_page = str(
                 current_url.include_query_params(
-                    page=self.page+1, page_size=self.page_size)
+                    page=self.page+1)
             )
         if self.page > 1:
             self.previous_page = str(current_url.include_query_params(
-                page=self.page-1, page_size=self.page_size
+                page=self.page-1
             ))
 
     def __init__(self, *args, current_url: URL, **kwargs):
         super().__init__(*args, **kwargs)
         self.calculate_adjacent_pages(current_url)
 
+
 def paginate_selection(session: SessionDep,
                        selection: SelectOfScalar[T],
                        request: Request,
                        page: int,
                        page_size: int) -> PaginatedResponse[T]:
-    total = session.exec(selection.with_only_columns(func.count())).first() # type: ignore # pylint: disable=not-callable
+    # type: ignore # pylint: disable=not-callable
+    total = session.exec(selection.with_only_columns(func.count())).first()
     selection = selection.offset((page-1)*page_size).limit(page_size)
     items = session.exec(selection).all()
 

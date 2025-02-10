@@ -7,6 +7,7 @@ from app.core.config import CONFIG
 from app.init import init
 from app.routes.v1.main_router import v1_router
 
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     init()

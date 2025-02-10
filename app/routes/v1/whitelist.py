@@ -27,13 +27,16 @@ def select_only_active_whitelists(selection: SelectOfScalar[Whitelist]):
         Whitelist.expiration_time > datetime.datetime.now()
     )
 
+
 def select_only_active_whitelist_bans(selection: SelectOfScalar[WhitelistBan]):
     return selection.where(
         WhitelistBan.valid).where(
         WhitelistBan.expiration_time > datetime.datetime.now()
     )
 
+
 WHITELIST_TYPES_T = NewWhitelistCkey | NewWhitelistDiscord | NewWhitelistInternal
+
 
 async def create_whitelist_helper(
     session: SessionDep,
@@ -43,20 +46,24 @@ async def create_whitelist_helper(
     ignore_bans: bool = False
 ) -> Whitelist:
     """Core logic for creating whitelist entries"""
-    player: Player = session.exec(select(Player).where(player_resolver(new_wl))).first()
-    admin: Player = session.exec(select(Player).where(admin_resolver(new_wl))).first()
+    player: Player = session.exec(
+        select(Player).where(player_resolver(new_wl))).first()
+    admin: Player = session.exec(
+        select(Player).where(admin_resolver(new_wl))).first()
 
     if not player or not admin:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Player or admin not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail="Player or admin not found")
 
     if not ignore_bans and session.exec(
-                select_only_active_whitelist_bans(
-                    select(WhitelistBan)
-                    .where(WhitelistBan.player_id == player.id)
-                    .where(WhitelistBan.wl_type == new_wl.wl_type)
-                )
-            ).first():
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Player is banned from this type of whitelist.")
+        select_only_active_whitelist_bans(
+            select(WhitelistBan)
+            .where(WhitelistBan.player_id == player.id)
+            .where(WhitelistBan.wl_type == new_wl.wl_type)
+        )
+    ).first():
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                            detail="Player is banned from this type of whitelist.")
 
     wl = Whitelist(
         **{**new_wl.model_dump(), "player_id": player.id, "admin_id": admin.id},
@@ -68,6 +75,7 @@ async def create_whitelist_helper(
     session.refresh(wl)
     logger.info("Whitelist created: %s", wl.model_dump_json())
     return wl
+
 
 def filter_whitelists(selection: SelectOfScalar[Whitelist],
                       ckey: str | None = None,
@@ -84,6 +92,7 @@ def filter_whitelists(selection: SelectOfScalar[Whitelist],
         selection = selection.where(Whitelist.wl_type == wl_type)
     return selection
 
+
 def filter_whitelist_bans(selection: SelectOfScalar[WhitelistBan],
                           ckey: str | None = None,
                           discord_id: str | None = None,
@@ -98,6 +107,7 @@ def filter_whitelist_bans(selection: SelectOfScalar[WhitelistBan],
     if wl_type is not None:
         selection = selection.where(WhitelistBan.wl_type == wl_type)
     return selection
+
 
 @router.get("s",  # /whitelists
             status_code=status.HTTP_200_OK,
@@ -116,7 +126,8 @@ async def get_whitelists(session: SessionDep,
     selection = select(Whitelist).join(
         Player, Player.id == Whitelist.player_id)  # type: ignore
 
-    selection = filter_whitelists(selection, ckey, discord_id, wl_type, active_only)
+    selection = filter_whitelists(
+        selection, ckey, discord_id, wl_type, active_only)
 
     return paginate_selection(session, selection, request, page, page_size)
 
@@ -128,16 +139,16 @@ async def get_whitelists(session: SessionDep,
                 status.HTTP_400_BAD_REQUEST: {"description": "Invalid filter combination"},
             })
 async def get_whitelisted_ckeys(session: SessionDep,
-                                 request: Request,
-                                 wl_type: str | None = None,
-                                 active_only: bool = True,
-                                 page: int = 1,
-                                 page_size: int = 50) -> PaginatedResponse[str]:
+                                request: Request,
+                                wl_type: str | None = None,
+                                active_only: bool = True,
+                                page: int = 1,
+                                page_size: int = 50) -> PaginatedResponse[str]:
     selection = select(Player.ckey).join(
         Whitelist, Player.id == Whitelist.player_id).distinct()  # type: ignore
 
     selection = filter_whitelists(selection,
-                                  wl_type=wl_type, 
+                                  wl_type=wl_type,
                                   active_only=active_only)
 
     return paginate_selection(session, selection, request, page, page_size)
@@ -189,19 +200,24 @@ BAN_POST_RESPONSES = {
     status.HTTP_404_NOT_FOUND: {"description": "Player or admin not found"},
 }
 
+
 def create_ban_helper(session: SessionDep,
                       new_ban: NewWhitelistBanBase,
                       player_resolver: Callable[[WHITELIST_TYPES_T], bool],
                       admin_resolver: Callable[[WHITELIST_TYPES_T], bool],
                       invalidate_wls: bool = True
                       ) -> WhitelistBan:
-    player: Player = session.exec(select(Player).where(player_resolver(new_ban))).first()
-    admin: Player = session.exec(select(Player).where(admin_resolver(new_ban))).first()
+    player: Player = session.exec(
+        select(Player).where(player_resolver(new_ban))).first()
+    admin: Player = session.exec(
+        select(Player).where(admin_resolver(new_ban))).first()
 
     if not player or not admin:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Player or admin not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail="Player or admin not found")
 
-    ban = WhitelistBan(**new_ban.model_dump(), player_id=player.id, admin_id=admin.id)
+    ban = WhitelistBan(**new_ban.model_dump(),
+                       player_id=player.id, admin_id=admin.id)
     session.add(ban)
 
     if invalidate_wls:
@@ -219,21 +235,24 @@ def create_ban_helper(session: SessionDep,
     logger.info("Whitelist ban created: %s", ban.model_dump_json())
     return ban
 
+
 @ban_router.get("s", status_code=status.HTTP_200_OK)
 async def get_whitelist_bans(session: SessionDep,
-                         request: Request,
-                         ckey: str | None = None,
-                         discord_id: str | None = None,
-                         wl_type: str | None = None,
-                         active_only: bool = True,
-                         page: int = 1,
-                         page_size: int = 50) -> PaginatedResponse[WhitelistBan]:
+                             request: Request,
+                             ckey: str | None = None,
+                             discord_id: str | None = None,
+                             wl_type: str | None = None,
+                             active_only: bool = True,
+                             page: int = 1,
+                             page_size: int = 50) -> PaginatedResponse[WhitelistBan]:
     selection = select(WhitelistBan).join(
         Player, Player.id == WhitelistBan.player_id)  # type: ignore
 
-    selection = filter_whitelist_bans(selection, ckey, discord_id, wl_type, active_only)
+    selection = filter_whitelist_bans(
+        selection, ckey, discord_id, wl_type, active_only)
 
-    total = session.exec(selection.with_only_columns(func.count())).first() # type: ignore # pylint: disable=not-callable
+    # type: ignore # pylint: disable=not-callable
+    total = session.exec(selection.with_only_columns(func.count())).first()
     selection = selection.offset((page-1)*page_size).limit(page_size)
     items = session.exec(selection).all()
 
@@ -245,8 +264,11 @@ async def get_whitelist_bans(session: SessionDep,
         current_url=request.url,
     )
 
+
 @ban_router.post("", status_code=status.HTTP_201_CREATED, responses=BAN_POST_RESPONSES, dependencies=[Depends(verify_bearer)])
-async def create_whitelist_ban(session: SessionDep, new_ban: NewWhitelistBanInternal, invalidate_wls: bool = True) -> WhitelistBan:
+async def create_whitelist_ban(session: SessionDep,
+                               new_ban: NewWhitelistBanInternal,
+                               invalidate_wls: bool = True) -> WhitelistBan:
     return create_ban_helper(
         session,
         new_ban,
@@ -255,8 +277,11 @@ async def create_whitelist_ban(session: SessionDep, new_ban: NewWhitelistBanInte
         invalidate_wls
     )
 
+
 @ban_router.post("/by-ckey", status_code=status.HTTP_201_CREATED, responses=BAN_POST_RESPONSES, dependencies=[Depends(verify_bearer)])
-async def create_whitelist_ban_by_ckey(session: SessionDep, new_ban: NewWhitelistBanCkey, invalidate_wls: bool = True) -> WhitelistBan:
+async def create_whitelist_ban_by_ckey(session: SessionDep,
+                                       new_ban: NewWhitelistBanCkey,
+                                       invalidate_wls: bool = True) -> WhitelistBan:
     return create_ban_helper(
         session,
         new_ban,
@@ -265,8 +290,11 @@ async def create_whitelist_ban_by_ckey(session: SessionDep, new_ban: NewWhitelis
         invalidate_wls
     )
 
+
 @ban_router.post("/by-discord", status_code=status.HTTP_201_CREATED, responses=BAN_POST_RESPONSES, dependencies=[Depends(verify_bearer)])
-async def create_whitelist_ban_by_discord(session: SessionDep, new_ban: NewWhitelistBanDiscord, invalidate_wls: bool = True) -> WhitelistBan:
+async def create_whitelist_ban_by_discord(session: SessionDep,
+                                          new_ban: NewWhitelistBanDiscord,
+                                          invalidate_wls: bool = True) -> WhitelistBan:
     return create_ban_helper(
         session,
         new_ban,
