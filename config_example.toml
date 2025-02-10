@@ -15,7 +15,7 @@ needs_rebuild = true
 [oauth]
 client_secret = "12345678"
 client_id = 12345678
-endpoint_url = "http://127.0.0.1:8000/v1"
+endpoint_url = "http://127.0.0.1:8000/v1/oauth"
 
 [general]
 #project_name = "FurFur Central"
