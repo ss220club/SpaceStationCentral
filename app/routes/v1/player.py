@@ -1,9 +1,10 @@
 import datetime
 import logging
+from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Request, status
 from fastapi.responses import RedirectResponse
-from sqlalchemy import func
+from sqlalchemy import func, update
 from sqlmodel import Session, select
 
 from app.core.config import CONFIG
@@ -11,16 +12,18 @@ from app.database.models import CkeyLinkToken, Player
 from app.deps import BEARER_DEP_RESPONSES, SessionDep, verify_bearer
 from app.fur_discord import DiscordOAuthClient
 from app.schemas.generic import PaginatedResponse
+from app.schemas.player import PlayerPatch
 
 logger = logging.getLogger(__name__)
 
+# region # OAuth
 
-router = APIRouter(prefix="/player", tags=["Player"])
+oauth_router = APIRouter(prefix="/oauth", tags=["OAuth"])
 
 CALLBACK_PATH = "/discord_oa"
 oauth_client = DiscordOAuthClient(
     CONFIG.oauth.client_id, CONFIG.oauth.client_secret, f"{
-        CONFIG.general.endpoint_url}{router.prefix}{CALLBACK_PATH}"
+        CONFIG.general.endpoint_url}{oauth_router.prefix}{CALLBACK_PATH}"
 )
 
 
@@ -46,7 +49,7 @@ async def get_token_by_ckey(session: Session, ckey: str) -> str:
     return token_entry.token
 
 
-@router.get("/login", status_code=status.HTTP_307_TEMPORARY_REDIRECT)
+@oauth_router.get("/login", status_code=status.HTTP_307_TEMPORARY_REDIRECT)
 async def login(token: str) -> RedirectResponse:
     """
     Redirects to the discord oauth2 login page with the given ckey and state token
@@ -54,7 +57,7 @@ async def login(token: str) -> RedirectResponse:
     return RedirectResponse(oauth_client.get_oauth_login_url(token))
 
 
-@router.post("/token", status_code=status.HTTP_201_CREATED, dependencies=[Depends(verify_bearer)], responses=BEARER_DEP_RESPONSES)
+@oauth_router.post("/token", status_code=status.HTTP_201_CREATED, dependencies=[Depends(verify_bearer)], responses=BEARER_DEP_RESPONSES)
 async def generate_state(session: SessionDep, ckey: str) -> str:
     """
     Generates a state token for the given ckey and returns it. The state token
@@ -63,7 +66,7 @@ async def generate_state(session: SessionDep, ckey: str) -> str:
     return await get_token_by_ckey(session, ckey)
 
 
-@router.get(CALLBACK_PATH)
+@oauth_router.get(CALLBACK_PATH)
 async def callback(session: SessionDep, code: str, state: str) -> Player:
     """
     The callback endpoint for the discord oauth2 flow. It takes the code and state parameters
@@ -103,28 +106,22 @@ async def callback(session: SessionDep, code: str, state: str) -> Player:
 
     return link
 
+# endregion
+# region # Players
 
-@router.get(
-    "",
+player_router = APIRouter(prefix="/players", tags=["Player"])
+
+
+@player_router.get(
+    "/{id}",
     status_code=status.HTTP_200_OK,
     responses={
         status.HTTP_200_OK: {"description": "Player"},
         status.HTTP_404_NOT_FOUND: {"description": "Player not found"},
     }
 )
-async def get_player(session: SessionDep,
-                     ckey: str | None = None,
-                     discord_id: str | None = None) -> Player:
-    """
-    Get players by ckey or discord_id, but not both.
-    """
-    selection = select(Player)
-    if ckey is not None:
-        selection = selection.where(Player.ckey == ckey)
-    if discord_id is not None:
-        selection = selection.where(Player.discord_id == discord_id)
-
-    result = session.exec(selection).first()
+async def get_player_by_id(session: SessionDep, id: int) -> Player:  # pylint: disable=redefined-builtin
+    result = session.exec(select(Player).where(Player.id == id)).first()
 
     if result is None:
         raise HTTPException(
@@ -132,10 +129,46 @@ async def get_player(session: SessionDep,
 
     return result
 
-# /players/
+
+@player_router.get(
+    "/discord/{discord_id}",
+    status_code=status.HTTP_200_OK,
+    responses={
+        status.HTTP_200_OK: {"description": "Player"},
+        status.HTTP_404_NOT_FOUND: {"description": "Player not found"},
+    }
+)
+async def get_player_by_discord_id(session: SessionDep,
+                                   discord_id: str) -> Player:
+    result = session.exec(select(Player).where(
+        Player.discord_id == discord_id)).first()
+
+    if result is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Player not found")
+
+    return result
 
 
-@router.get("s", status_code=status.HTTP_200_OK)
+@player_router.get(
+    "/ckey/{ckey}",
+    status_code=status.HTTP_200_OK,
+    responses={
+        status.HTTP_200_OK: {"description": "Player"},
+        status.HTTP_404_NOT_FOUND: {"description": "Player not found"},
+    }
+)
+async def get_player_by_ckey(session: SessionDep, ckey: str) -> Player:
+    result = session.exec(select(Player).where(Player.ckey == ckey)).first()
+
+    if result is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Player not found")
+
+    return result
+
+
+@player_router.get("", status_code=status.HTTP_200_OK)
 async def get_players(session: SessionDep, request: Request, page: int = 1, page_size: int = 50) -> PaginatedResponse[Player]:
     total = session.exec(select(func.count()).select_from(  # pylint: disable=not-callable # black magic
         Player)).first()
@@ -148,3 +181,19 @@ async def get_players(session: SessionDep, request: Request, page: int = 1, page
         page_size=page_size,
         current_url=request.url
     )
+
+
+@player_router.patch("/{id}", status_code=status.HTTP_200_OK, responses=BEARER_DEP_RESPONSES, dependencies=[Depends(verify_bearer)])
+async def update_player(session: SessionDep, id: int, player_patch: PlayerPatch) -> Player:  # pylint: disable=redefined-builtin
+    player = await get_player_by_id(session, id)
+    update_data = player_patch.model_dump(exclude_unset=True)
+
+    for key, value in update_data.items():
+        setattr(player, key, value)
+
+    session.commit()
+    session.refresh(player)
+    return player
+    
+
+# endregion

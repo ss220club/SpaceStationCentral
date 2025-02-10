@@ -13,25 +13,19 @@ from app.schemas.generic import PaginatedResponse, paginate_selection
 from app.schemas.whitelist import (NewWhitelistBanBase, NewWhitelistBanCkey,
                                    NewWhitelistBanDiscord, NewWhitelistBanInternal, NewWhitelistBase,
                                    NewWhitelistCkey, NewWhitelistDiscord,
-                                   NewWhitelistInternal)
+                                   NewWhitelistInternal, WhitelistPatch)
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/whitelist", tags=["Whitelist"])
-ban_router = APIRouter(prefix="/ban", tags=["Whitelist Ban", "Ban"])
+# region # Whitelists
+
+whitelist_router = APIRouter(prefix="/whitelists", tags=["Whitelist"])
 
 
 def select_only_active_whitelists(selection: SelectOfScalar[Whitelist]):
     return selection.where(
         Whitelist.valid).where(
         Whitelist.expiration_time > datetime.datetime.now()
-    )
-
-
-def select_only_active_whitelist_bans(selection: SelectOfScalar[WhitelistBan]):
-    return selection.where(
-        WhitelistBan.valid).where(
-        WhitelistBan.expiration_time > datetime.datetime.now()
     )
 
 
@@ -108,13 +102,29 @@ def filter_whitelist_bans(selection: SelectOfScalar[WhitelistBan],
         selection = selection.where(WhitelistBan.wl_type == wl_type)
     return selection
 
+# region Get
 
-@router.get("s",  # /whitelists
-            status_code=status.HTTP_200_OK,
-            responses={
-                status.HTTP_200_OK: {"description": "List of matching whitelists"},
-                status.HTTP_400_BAD_REQUEST: {"description": "Invalid filter combination"},
-            })
+@whitelist_router.get("/{id}",
+                      status_code=status.HTTP_200_OK,
+                      responses={
+                          status.HTTP_200_OK: {"description": "Whitelist"},
+                          status.HTTP_404_NOT_FOUND: {"description": "Whitelist not found"},
+                      })
+def get_whitelist(session, id):
+    wl = session.exec(select(Whitelist).where(Whitelist.id == id)).first()
+
+    if wl is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail="Whitelist not found")
+
+    return wl
+
+@whitelist_router.get("",
+                      status_code=status.HTTP_200_OK,
+                      responses={
+                          status.HTTP_200_OK: {"description": "List of matching whitelists"},
+                          status.HTTP_400_BAD_REQUEST: {"description": "Invalid filter combination"},
+                      })
 async def get_whitelists(session: SessionDep,
                          request: Request,
                          ckey: str | None = None,
@@ -132,12 +142,12 @@ async def get_whitelists(session: SessionDep,
     return paginate_selection(session, selection, request, page, page_size)
 
 
-@router.get("/ckeys",
-            status_code=status.HTTP_200_OK,
-            responses={
-                status.HTTP_200_OK: {"description": "Whitelistd ckeys"},
-                status.HTTP_400_BAD_REQUEST: {"description": "Invalid filter combination"},
-            })
+@whitelist_router.get("/ckeys",
+                      status_code=status.HTTP_200_OK,
+                      responses={
+                          status.HTTP_200_OK: {"description": "Whitelistd ckeys"},
+                          status.HTTP_400_BAD_REQUEST: {"description": "Invalid filter combination"},
+                      })
 async def get_whitelisted_ckeys(session: SessionDep,
                                 request: Request,
                                 wl_type: str | None = None,
@@ -153,6 +163,8 @@ async def get_whitelisted_ckeys(session: SessionDep,
 
     return paginate_selection(session, selection, request, page, page_size)
 
+# endregion
+# region Post
 
 WHITELIST_POST_RESPONSES = {
     **BEARER_DEP_RESPONSES,
@@ -162,7 +174,10 @@ WHITELIST_POST_RESPONSES = {
 }
 
 
-@router.post("/", status_code=status.HTTP_201_CREATED, responses=WHITELIST_POST_RESPONSES, dependencies=[Depends(verify_bearer)])
+@whitelist_router.post("",
+                       status_code=status.HTTP_201_CREATED,
+                       responses=WHITELIST_POST_RESPONSES,
+                       dependencies=[Depends(verify_bearer)])
 async def create_whitelist(session: SessionDep, new_wl: NewWhitelistInternal, ignore_bans: bool = False) -> Whitelist:
     return await create_whitelist_helper(
         session,
@@ -173,7 +188,10 @@ async def create_whitelist(session: SessionDep, new_wl: NewWhitelistInternal, ig
     )
 
 
-@router.post("/by-ckey", status_code=status.HTTP_201_CREATED, responses=WHITELIST_POST_RESPONSES, dependencies=[Depends(verify_bearer)])
+@whitelist_router.post("/ckey",
+                       status_code=status.HTTP_201_CREATED,
+                       responses=WHITELIST_POST_RESPONSES,
+                       dependencies=[Depends(verify_bearer)])
 async def create_whitelist_by_ckey(session: SessionDep, new_wl: NewWhitelistCkey, ignore_bans: bool = False) -> Whitelist:
     return await create_whitelist_helper(
         session,
@@ -184,7 +202,10 @@ async def create_whitelist_by_ckey(session: SessionDep, new_wl: NewWhitelistCkey
     )
 
 
-@router.post("/by-discord", status_code=status.HTTP_201_CREATED, responses=WHITELIST_POST_RESPONSES, dependencies=[Depends(verify_bearer)])
+@whitelist_router.post("/discord",
+                       status_code=status.HTTP_201_CREATED,
+                       responses=WHITELIST_POST_RESPONSES,
+                       dependencies=[Depends(verify_bearer)])
 async def create_whitelist_by_discord(session: SessionDep, new_wl: NewWhitelistDiscord, ignore_bans: bool = False) -> Whitelist:
     return await create_whitelist_helper(
         session,
@@ -193,6 +214,45 @@ async def create_whitelist_by_discord(session: SessionDep, new_wl: NewWhitelistD
         lambda d: Player.discord_id == d.admin_discord_id,
         ignore_bans
     )
+
+# endregion
+# region Patch
+
+WHITELIST_PATCH_RESPONSES = {
+    **BEARER_DEP_RESPONSES,
+    status.HTTP_200_OK: {"description": "Whitelist updated"},
+    status.HTTP_404_NOT_FOUND: {"description": "Whitelist not found"},
+}
+
+
+@whitelist_router.patch("/{id}",
+                        status_code=status.HTTP_200_OK,
+                        responses=WHITELIST_PATCH_RESPONSES,
+                        dependencies=[Depends(verify_bearer)])
+async def update_whitelist(session: SessionDep, id: int, wl_patch: WhitelistPatch) -> Whitelist:  # pylint: disable=redefined-builtin
+    wl = get_whitelist(session, id)
+    update_data = wl_patch.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(wl, key, value)
+
+    session.commit()
+    session.refresh(wl)
+    return wl
+
+# endregion
+# endregion
+# region # WL Bans
+
+whitelist_ban_router = APIRouter(
+    prefix="/whitelist_bans", tags=["Whitelist Ban", "Ban", "Whitelist"])
+
+
+def select_only_active_whitelist_bans(selection: SelectOfScalar[WhitelistBan]):
+    return selection.where(
+        WhitelistBan.valid).where(
+        WhitelistBan.expiration_time > datetime.datetime.now()
+    )
+
 
 BAN_POST_RESPONSES = {
     **BEARER_DEP_RESPONSES,
@@ -236,7 +296,25 @@ def create_ban_helper(session: SessionDep,
     return ban
 
 
-@ban_router.get("s", status_code=status.HTTP_200_OK)
+# region Get
+
+
+@whitelist_ban_router.get("/{id}",
+                      status_code=status.HTTP_200_OK,
+                      responses={
+                          status.HTTP_200_OK: {"description": "Whitelist"},
+                          status.HTTP_404_NOT_FOUND: {"description": "Whitelist not found"},
+                      })
+def get_whitelist_ban(session, id):
+    wl_ban = session.exec(select(WhitelistBan).where(WhitelistBan.id == id)).first()
+
+    if wl_ban is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail="Whitelist ban not found")
+
+    return wl_ban
+
+@whitelist_ban_router.get("", status_code=status.HTTP_200_OK)
 async def get_whitelist_bans(session: SessionDep,
                              request: Request,
                              ckey: str | None = None,
@@ -264,8 +342,14 @@ async def get_whitelist_bans(session: SessionDep,
         current_url=request.url,
     )
 
+# endregion
+# region Post
 
-@ban_router.post("", status_code=status.HTTP_201_CREATED, responses=BAN_POST_RESPONSES, dependencies=[Depends(verify_bearer)])
+
+@whitelist_ban_router.post("",
+                           status_code=status.HTTP_201_CREATED,
+                           responses=BAN_POST_RESPONSES,
+                           dependencies=[Depends(verify_bearer)])
 async def create_whitelist_ban(session: SessionDep,
                                new_ban: NewWhitelistBanInternal,
                                invalidate_wls: bool = True) -> WhitelistBan:
@@ -278,7 +362,10 @@ async def create_whitelist_ban(session: SessionDep,
     )
 
 
-@ban_router.post("/by-ckey", status_code=status.HTTP_201_CREATED, responses=BAN_POST_RESPONSES, dependencies=[Depends(verify_bearer)])
+@whitelist_ban_router.post("/ckey",
+                           status_code=status.HTTP_201_CREATED,
+                           responses=BAN_POST_RESPONSES,
+                           dependencies=[Depends(verify_bearer)])
 async def create_whitelist_ban_by_ckey(session: SessionDep,
                                        new_ban: NewWhitelistBanCkey,
                                        invalidate_wls: bool = True) -> WhitelistBan:
@@ -291,7 +378,10 @@ async def create_whitelist_ban_by_ckey(session: SessionDep,
     )
 
 
-@ban_router.post("/by-discord", status_code=status.HTTP_201_CREATED, responses=BAN_POST_RESPONSES, dependencies=[Depends(verify_bearer)])
+@whitelist_ban_router.post("/discord",
+                           status_code=status.HTTP_201_CREATED,
+                           responses=BAN_POST_RESPONSES,
+                           dependencies=[Depends(verify_bearer)])
 async def create_whitelist_ban_by_discord(session: SessionDep,
                                           new_ban: NewWhitelistBanDiscord,
                                           invalidate_wls: bool = True) -> WhitelistBan:
@@ -303,4 +393,30 @@ async def create_whitelist_ban_by_discord(session: SessionDep,
         invalidate_wls
     )
 
-router.include_router(ban_router)
+# endregion
+# region Patch
+
+WHITELIST_BAN_PATCH_RESPONSES = {
+    **BEARER_DEP_RESPONSES,
+    status.HTTP_200_OK: {"description": "Whitelist ban updated"},
+    status.HTTP_404_NOT_FOUND: {"description": "Whitelist ban found"},
+}
+
+
+@whitelist_ban_router.patch("/{id}",
+                        status_code=status.HTTP_200_OK,
+                        responses=WHITELIST_PATCH_RESPONSES,
+                        dependencies=[Depends(verify_bearer)])
+async def update_whitelist(session: SessionDep, id: int, wl_ban_patch: WhitelistPatch) -> WhitelistBan:  # pylint: disable=redefined-builtin
+    ban = get_whitelist_ban(session, id)
+    update_data = wl_ban_patch.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(ban, key, value)
+
+    session.commit()
+    session.refresh(ban)
+    return ban
+
+
+# endregion
+# endregion

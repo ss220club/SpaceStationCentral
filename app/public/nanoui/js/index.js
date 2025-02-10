@@ -23,7 +23,7 @@ function fetchPlayer() {
 
   uiContent.innerHTML = "Loading...";
 
-  fetch(`/v1/player?ckey=${encodeURIComponent(ckey)}`)
+  fetch(`/v1/players/ckey/${ckey}`)
     .then((response) => {
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);

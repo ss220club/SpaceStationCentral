@@ -40,3 +40,7 @@ class NewWhitelistDiscord(NewWhitelistBase):
 
 class NewWhitelistBanDiscord(NewWhitelistDiscord, NewWhitelistBanBase):
     pass
+
+
+class WhitelistPatch(BaseModel):
+    valid: bool | None = None

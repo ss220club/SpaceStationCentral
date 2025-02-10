@@ -11,7 +11,7 @@ from app.schemas.generic import PaginatedResponse, paginate_selection
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/donate", tags=["Donate"])
+router = APIRouter(prefix="/donates", tags=["Donate"])
 
 
 def filter_donations(selection: SelectOfScalar[Donation],
@@ -28,7 +28,7 @@ def filter_donations(selection: SelectOfScalar[Donation],
     return selection
 
 
-@router.get("s", status_code=status.HTTP_200_OK)
+@router.get("", status_code=status.HTTP_200_OK)
 async def get_donations(session: SessionDep,
                         request: Request,
                         ckey: str | None = None,
@@ -60,7 +60,7 @@ WHITELIST_POST_RESPONSES = {
 }
 
 
-@router.post("/by-discord", status_code=status.HTTP_201_CREATED, dependencies=[Depends(verify_bearer)], responses=WHITELIST_POST_RESPONSES)
+@router.post("/discord", status_code=status.HTTP_201_CREATED, dependencies=[Depends(verify_bearer)], responses=WHITELIST_POST_RESPONSES)
 async def create_donation_by_discord(session: SessionDep, new_donation: NewDonationDiscord) -> Donation:
     player = session.exec(
         select(Player).where(Player.discord_id == new_donation.discord_id)
