@@ -44,8 +44,7 @@ async def get_donations(session: SessionDep,
     return paginate_selection(session, selection, request, page, page_size)
 
 
-@router.post("", status_code=status.HTTP_201_CREATED)
-async def create_donation(session: SessionDep, donation: Donation) -> Donation:
+async def create_donation_helper(session: SessionDep, donation: Donation) -> Donation:
     session.add(donation)
     session.commit()
     session.refresh(donation)
@@ -60,8 +59,11 @@ WHITELIST_POST_RESPONSES = {
 }
 
 
-@router.post("/discord", status_code=status.HTTP_201_CREATED, dependencies=[Depends(verify_bearer)], responses=WHITELIST_POST_RESPONSES)
+@router.post("", status_code=status.HTTP_201_CREATED, dependencies=[Depends(verify_bearer)], responses=WHITELIST_POST_RESPONSES)
 async def create_donation_by_discord(session: SessionDep, new_donation: NewDonationDiscord) -> Donation:
+    """
+    Creating a new donation from any other identifier doesnt make much sense
+    """
     player = session.exec(
         select(Player).where(Player.discord_id == new_donation.discord_id)
     ).first()
@@ -75,4 +77,4 @@ async def create_donation_by_discord(session: SessionDep, new_donation: NewDonat
         tier=new_donation.tier
     )
 
-    return await create_donation(session, donation)
+    return await create_donation_helper(session, donation)
