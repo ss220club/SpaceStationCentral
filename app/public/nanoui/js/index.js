@@ -33,3 +33,10 @@ function fetchPlayer() {
     .then(displayPlayerInfo)
     .catch(displayError);
 }
+
+function toggleAudio() {
+  const bg_audio = document.getElementById("backgroundMusic");
+  bg_audio.muted = !bg_audio.muted;
+  bg_audio.play()
+  bg_audio.currentTime = 84;
+}

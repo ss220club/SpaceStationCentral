@@ -7,6 +7,7 @@
     <script src="js/index.js"></script>
   </head>
   <body>
+    <audio id="backgroundMusic" src="media/central.mp3" preload="auto" loop muted></audio>
     <div id="uiWrapper">
       <div id="uiTitleWrapper">
         <div id="uiTitle" class="icon">
@@ -15,10 +16,11 @@
         </div>
       </div>
       <div id="uiContent">
+        <button id="audioButton" class="uiIcon16 icon-volume-on" onclick="toggleAudio()"></button>
         <div style="padding: 20px;">
           <input 
             type="text" 
-            id="ckeyInput" 
+            id="ckeyInput"
             placeholder="Enter ckey..."
             style="padding: 8px; margin-right: 10px;"
           >
