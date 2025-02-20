@@ -12,6 +12,9 @@ pool_pre_ping = true
 # Creates tables if they don't exist
 needs_rebuild = true
 
+[redis]
+connection_string = "redis://default:user@hostname:6379"
+
 [oauth]
 client_secret = "12345678"
 client_id = 12345678
