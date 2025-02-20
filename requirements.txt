@@ -13,3 +13,5 @@ pytest
 pylint
 autopep8
 isort
+redis
+alembic

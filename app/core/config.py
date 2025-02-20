@@ -45,6 +45,8 @@ class Database(CustomBaseModel):
 
     needs_rebuild: bool = True
 
+class Redis(CustomBaseModel):
+    connection_string = "redis://127.0.0.1:6379/0"
 
 class OAuth(CustomBaseModel):
     # From discord app's settings
@@ -56,6 +58,7 @@ class OAuth(CustomBaseModel):
 class Config(CustomBaseModel):
     general: General = General()
     database: Database = Database()
+    redis: Redis = Redis()
     oauth: OAuth = OAuth()
 
 
