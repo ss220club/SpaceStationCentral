@@ -8,7 +8,7 @@ from app.database.models import Player
 
 
 class NewWhitelistBase(BaseModel):
-    wl_type: str
+    server_type: str
     duration_days: int
     valid: bool = True
 

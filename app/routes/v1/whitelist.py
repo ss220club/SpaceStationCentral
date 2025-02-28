@@ -30,7 +30,7 @@ def select_only_active_whitelists(selection: SelectOfScalar[Whitelist]):
 def filter_whitelists(selection: SelectOfScalar[Whitelist],
                       ckey: str | None = None,
                       discord_id: str | None = None,
-                      wl_type: str | None = None,
+                      server_type: str | None = None,
                       active_only: bool = True) -> SelectOfScalar[Whitelist]:
     if active_only:
         selection = select_only_active_whitelists(selection)
@@ -38,15 +38,15 @@ def filter_whitelists(selection: SelectOfScalar[Whitelist],
         selection = selection.where(Player.ckey == ckey)
     if discord_id is not None:
         selection = selection.where(Player.discord_id == discord_id)
-    if wl_type is not None:
-        selection = selection.where(Whitelist.wl_type == wl_type)
+    if server_type is not None:
+        selection = selection.where(Whitelist.server_type == server_type)
     return selection
 
 
 def filter_whitelist_bans(selection: SelectOfScalar[WhitelistBan],
                           ckey: str | None = None,
                           discord_id: str | None = None,
-                          wl_type: str | None = None,
+                          server_type: str | None = None,
                           active_only: bool = True) -> SelectOfScalar[WhitelistBan]:
     if active_only:
         selection = select_only_active_whitelist_bans(selection)
@@ -54,8 +54,8 @@ def filter_whitelist_bans(selection: SelectOfScalar[WhitelistBan],
         selection = selection.where(Player.ckey == ckey)
     if discord_id is not None:
         selection = selection.where(Player.discord_id == discord_id)
-    if wl_type is not None:
-        selection = selection.where(WhitelistBan.wl_type == wl_type)
+    if server_type is not None:
+        selection = selection.where(WhitelistBan.server_type == server_type)
     return selection
 
 # region Get
@@ -71,7 +71,7 @@ async def get_whitelists(session: SessionDep,
                          request: Request,
                          ckey: str | None = None,
                          discord_id: str | None = None,
-                         wl_type: str | None = None,
+                         server_type: str | None = None,
                          active_only: bool = True,
                          page: int = 1,
                          page_size: int = 50) -> PaginatedResponse[Whitelist]:
@@ -79,7 +79,7 @@ async def get_whitelists(session: SessionDep,
         Player, Player.id == Whitelist.player_id)  # type: ignore
 
     selection = filter_whitelists(
-        selection, ckey, discord_id, wl_type, active_only)
+        selection, ckey, discord_id, server_type, active_only)
 
     return paginate_selection(session, selection, request, page, page_size)
 
@@ -91,7 +91,7 @@ async def get_whitelists(session: SessionDep,
                       })
 async def get_whitelisted_ckeys(session: SessionDep,
                                 request: Request,
-                                wl_type: str | None = None,
+                                server_type: str | None = None,
                                 active_only: bool = True,
                                 page: int = 1,
                                 page_size: int = 50) -> PaginatedResponse[str]:
@@ -99,7 +99,7 @@ async def get_whitelisted_ckeys(session: SessionDep,
         Whitelist, Player.id == Whitelist.player_id).distinct()  # type: ignore
 
     selection = filter_whitelists(selection,
-                                  wl_type=wl_type,
+                                  server_type=server_type,
                                   active_only=active_only)
 
     return paginate_selection(session, selection, request, page, page_size)
@@ -150,7 +150,7 @@ async def create_whitelist(session: SessionDep, new_wl: NEW_WHITELIST_TYPES, ign
     if not ignore_bans:
         selection = select(WhitelistBan).where(
             WhitelistBan.player_id == player.id).where(
-            WhitelistBan.wl_type == new_wl.wl_type)
+            WhitelistBan.server_type == new_wl.server_type)
         selection = select_only_active_whitelist_bans(selection)
 
         if session.exec(selection).first() is not None:
@@ -211,7 +211,7 @@ async def get_whitelist_bans(session: SessionDep,
                              request: Request,
                              ckey: str | None = None,
                              discord_id: str | None = None,
-                             wl_type: str | None = None,
+                             server_type: str | None = None,
                              active_only: bool = True,
                              page: int = 1,
                              page_size: int = 50) -> PaginatedResponse[WhitelistBan]:
@@ -219,7 +219,7 @@ async def get_whitelist_bans(session: SessionDep,
         Player, Player.id == WhitelistBan.player_id)  # type: ignore
 
     selection = filter_whitelist_bans(
-        selection, ckey, discord_id, wl_type, active_only)
+        selection, ckey, discord_id, server_type, active_only)
 
     # type: ignore # pylint: disable=not-callable
     total = session.exec(selection.with_only_columns(func.count())).first()
@@ -282,7 +282,7 @@ async def create_whitelist_ban(session: SessionDep,
             update(Whitelist).where(
                 Whitelist.player_id == player.id
             ).where(
-                Whitelist.wl_type == new_ban.wl_type
+                Whitelist.server_type == new_ban.server_type
             ).where(
                 Whitelist.expiration_time < datetime.datetime.now()
             ).values(

@@ -6,7 +6,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlmodel import Session, select
 
 from app.core.db import engine
-from app.database.models import Auth
+from app.database.models import APIAuth
 
 
 def get_session() -> Generator[Session, None, None]:
@@ -43,7 +43,7 @@ def verify_bearer(
 
     hashed_token = hash_bearer_token(token)
     if session.exec(
-        select(Auth).where(Auth.token_hash == hashed_token)
+        select(APIAuth).where(APIAuth.token_hash == hashed_token)
     ).first() is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

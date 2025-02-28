@@ -14,8 +14,10 @@ DEFAULT_TOKEN_EXPIRATION_TIME = timedelta(minutes=5)
 class Player(SQLModel, table=True):
     __tablename__ = "player"
     id: int = Field(default=None, primary_key=True)
-    # Actually is a pretty big int. Is way **too** big for a lot of software to handle
     discord_id: str = Field(max_length=32, unique=True, index=True)
+    """
+    Actually is a pretty big int. Is way **too** big for a lot of software to handle
+    """
     ckey: str | None = Field(max_length=32, unique=True, index=True)
     # wizards_id: str | None = Field(unique=True, index=True) # Most likely is some kind of uuid
 
@@ -33,12 +35,12 @@ class CkeyLinkToken(SQLModel, table=True):
 class WhitelistBase(SQLModel):
     id: int = Field(default=None, primary_key=True)
     player_id: int = Field(foreign_key="player.id", index=True)
-    wl_type: str = Field(max_length=32, default="default")
+    server_type: str = Field(max_length=32, index=True, default="default")
     admin_id: int = Field(foreign_key="player.id")
     issue_time: datetime = Field(default_factory=datetime.now)
     expiration_time: datetime = Field(
         default_factory=lambda: datetime.now() + DEFAULT_WHITELIST_EXPIRATION_TIME)
-    valid: bool = Field(default=True)
+    valid: bool = Field(default=True, index=True)
 
 
 class Whitelist(WhitelistBase, table=True):
@@ -52,8 +54,8 @@ class WhitelistBan(WhitelistBase, table=True):
     reason: str | None = Field(max_length=1024)
 
 
-class Auth(SQLModel, table=True):
-    __tablename__ = "auth"
+class APIAuth(SQLModel, table=True):
+    __tablename__ = "api_auth"
     id: int = Field(default=None, primary_key=True)
     token_hash: str = Field(max_length=64, unique=True, index=True)
 

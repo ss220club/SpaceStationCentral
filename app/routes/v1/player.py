@@ -89,13 +89,17 @@ async def callback(session: SessionDep, code: str, state: str) -> Player:
     discord_user = await oauth_client.get_user(discord_token)
     discord_id = discord_user.id
 
-    if session.exec(select(Player).where(Player.ckey == ckey or Player.discord_id == discord_id)).first() is not None:
-        logger.debug(
-            "Player already linked and tried to link: %s %s", ckey, discord_id)
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT,
-                            detail="Player already linked")
+    if link := session.exec(select(Player).where(
+        Player.discord_id == discord_id)).first():
+        # General player account already exists
+        if link.ckey is not None:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, detail="Player already linked")
 
-    link = Player(ckey=ckey, discord_id=discord_id)
+        link.ckey = ckey
+    else:
+        link = Player(ckey=ckey, discord_id=discord_id)
+
     session.add(link)
     session.delete(token)
     session.commit()

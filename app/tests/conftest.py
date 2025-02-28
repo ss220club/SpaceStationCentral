@@ -9,7 +9,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from sqlmodel import Session, SQLModel, create_engine
 
-from app.database.models import Auth, Player, Whitelist
+from app.database.models import APIAuth, Player, Whitelist
 from app.deps import get_session, hash_bearer_token
 from app.main import app as main_app
 
@@ -53,7 +53,7 @@ def bearer(db_session: Session) -> Generator[str, None, None]:
     token = str(random.randint(10000000, 99999999))
     hashed_token = hash_bearer_token(token)
 
-    auth = Auth(token_hash=hashed_token)
+    auth = APIAuth(token_hash=hashed_token)
     db_session.add(auth)
     db_session.commit()
 
@@ -105,21 +105,21 @@ def duration_days() -> Generator[int, None, None]:
     yield random.randint(1, 777)
 
 
-def generate_wl_type() -> str:
+def generate_server_type() -> str:
     return ''.join(random.choices(string.ascii_letters + string.digits, k=8))
 
 
 @pytest.fixture(scope="function")
-def wl_type() -> Generator[str, None, None]:
-    yield generate_wl_type()
+def server_type() -> Generator[str, None, None]:
+    yield generate_server_type()
 
 
 def create_whitelist(db_session: Session, player: Player, admin: Player,
-                     wl_type: str, expiration_time: datetime.datetime, valid: bool) -> Whitelist:
+                     server_type: str, expiration_time: datetime.datetime, valid: bool) -> Whitelist:
     wl = Whitelist(
         player_id=player.id,
         admin_id=admin.id,
-        wl_type=wl_type,
+        server_type=server_type,
         expiration_time=expiration_time,
         valid=valid
     )
@@ -131,24 +131,24 @@ def create_whitelist(db_session: Session, player: Player, admin: Player,
 
 @pytest.fixture(scope="function")
 def whitelist(db_session: Session, player: Player, admin: Player,
-              wl_type: str, expiration_time: datetime.datetime, valid: bool) -> Generator[Whitelist, None, None]:
-    yield create_whitelist(db_session, player, admin, wl_type, expiration_time, valid)
+              server_type: str, expiration_time: datetime.datetime, valid: bool) -> Generator[Whitelist, None, None]:
+    yield create_whitelist(db_session, player, admin, server_type, expiration_time, valid)
 
 
 @pytest.fixture(scope="function")
 def whitelist_factory(db_session: Session) -> Generator[Whitelist, None, None]:
     def factory(player: Player | None = None,
                 admin: Player | None = None,
-                wl_type: str | None = None,
+                server_type: str | None = None,
                 expiration_time: datetime.datetime | None = None,
                 valid: bool = True) -> Whitelist:
         player = player if player is not None else create_player(
             db_session, generate_ckey(), generate_discord_id())
         admin = admin if admin is not None else create_player(
             db_session, generate_ckey(), generate_discord_id())
-        wl_type = wl_type if wl_type is not None else generate_wl_type()
+        server_type = server_type if server_type is not None else generate_server_type()
         expiration_time = expiration_time if expiration_time is not None else datetime.datetime.now(
         ) + datetime.timedelta(days=random.randint(-777, 777))
         valid = valid if valid is not None else random.choice([True, False])
-        return create_whitelist(db_session, player, admin, wl_type, expiration_time, valid)
+        return create_whitelist(db_session, player, admin, server_type, expiration_time, valid)
     yield factory  # type: ignore
