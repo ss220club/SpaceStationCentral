@@ -284,7 +284,7 @@ async def create_whitelist_ban(session: SessionDep,
             ).where(
                 Whitelist.server_type == new_ban.server_type
             ).where(
-                Whitelist.expiration_time < datetime.datetime.now()
+                Whitelist.expiration_time > datetime.datetime.now()
             ).values(
                 valid=False
             )
