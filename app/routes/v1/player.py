@@ -1,7 +1,7 @@
 import datetime
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status, BackgroundTasks
 from fastapi.responses import RedirectResponse
 from sqlalchemy import func
 from sqlmodel import Session, select
@@ -11,7 +11,8 @@ from app.database.models import CkeyLinkToken, Player
 from app.deps import BEARER_DEP_RESPONSES, SessionDep, verify_bearer
 from app.fur_discord import DiscordOAuthClient
 from app.schemas.generic import PaginatedResponse
-from app.schemas.player import PlayerPatch
+from app.schemas.player import NewPlayer, PlayerPatch
+import app.core.redis as redis
 
 logger = logging.getLogger(__name__)
 
@@ -96,6 +97,7 @@ async def callback(session: SessionDep, code: str, state: str) -> Player:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT, detail="Player already linked")
 
+        logger.debug("Linking a preexisting player %s to %s", link.discord_id, ckey)
         link.ckey = ckey
     else:
         link = Player(ckey=ckey, discord_id=discord_id)
@@ -107,12 +109,30 @@ async def callback(session: SessionDep, code: str, state: str) -> Player:
 
     logger.info("Linked %s to %s", link.ckey, link.discord_id)
 
+    await update_player_event(link)
+
     return link
 
 # endregion
 # region # Players
 
 player_router = APIRouter(prefix="/players", tags=["Player"])
+
+
+async def get_or_create_player_by_discord_id(session: SessionDep,
+                                             discord_id: str) -> Player:
+    result = session.exec(select(Player).where(
+        Player.discord_id == discord_id)).first()
+
+    if result is None:
+        player = Player(discord_id=discord_id)
+        session.add(player)
+        session.commit()
+        session.refresh(player)
+        return player
+
+    return result
+
 
 @player_router.get(
     "/discord/{discord_id}",
@@ -167,6 +187,29 @@ async def get_players(session: SessionDep, request: Request, page: int = 1, page
     )
 
 
+@player_router.post("", status_code=status.HTTP_201_CREATED, responses=BEARER_DEP_RESPONSES, dependencies=[Depends(verify_bearer)])
+async def create_player(session: SessionDep, new_player: NewPlayer) -> Player:
+    """
+    Used internally and for force linking players manually
+    """
+    try:
+        await get_player_by_discord_id(session, new_player.discord_id)
+        await get_player_by_ckey(session, new_player.ckey)
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="Player already exists")
+    except HTTPException as e:
+        if e.status_code != status.HTTP_404_NOT_FOUND:
+            raise e
+
+    player = Player(**new_player.model_dump())
+    session.add(player)
+    session.commit()
+    session.refresh(player)
+    logger.info("Force linked %s to %s", player.ckey, player.discord_id)
+    await update_player_event(player)
+    return player
+
+
 @player_router.get(
     "/{id}",
     status_code=status.HTTP_200_OK,
@@ -195,7 +238,16 @@ async def update_player(session: SessionDep, id: int, player_patch: PlayerPatch)
 
     session.commit()
     session.refresh(player)
+    logger.info("Player updated: %s", player.model_dump_json())
+    await update_player_event(player)
     return player
 
+
+# endregion
+
+# region Events
+
+async def update_player_event(player: Player) -> None:
+    await redis.send_message("link", player.model_dump_json())
 
 # endregion

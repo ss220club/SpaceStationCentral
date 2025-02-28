@@ -1,5 +1,11 @@
-import redis
+from typing import AsyncGenerator
+import redis.asyncio as redis
 
 from app.core.config import CONFIG
 
-REDIS = redis.from_url(CONFIG.redis.connection_string)
+REDIS_POOL = redis.ConnectionPool.from_url(CONFIG.redis.connection_string)
+
+
+async def send_message(channel: str, message: str) -> None:
+    client = redis.Redis(connection_pool=REDIS_POOL)
+    await client.publish(f"{CONFIG.redis.channel}.{channel}", message)

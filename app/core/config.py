@@ -46,6 +46,7 @@ class Database(CustomBaseModel):
 
 class Redis(CustomBaseModel):
     connection_string: str = "redis://127.0.0.1:6379/0"
+    channel: str = "central"
 
 
 class OAuth(CustomBaseModel):

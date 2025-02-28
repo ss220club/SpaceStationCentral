@@ -7,8 +7,10 @@ from sqlmodel.sql.expression import SelectOfScalar
 
 from app.database.models import Donation, Player
 from app.deps import SessionDep, verify_bearer
+from app.routes.v1.player import create_player, get_or_create_player_by_discord_id
 from app.schemas.donate import NewDonationDiscord
 from app.schemas.generic import PaginatedResponse, paginate_selection
+from app.schemas.player import NewPlayer
 
 logger = logging.getLogger(__name__)
 
@@ -65,13 +67,7 @@ async def create_donation_by_discord(session: SessionDep, new_donation: NewDonat
     """
     Creating a new donation from any other identifier doesnt make much sense
     """
-    player = session.exec(
-        select(Player).where(Player.discord_id == new_donation.discord_id)
-    ).first()
-
-    if player is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Player not found")
+    player = await get_or_create_player_by_discord_id(session, new_donation.discord_id)
 
     donation = Donation(
         player_id=player.id,
