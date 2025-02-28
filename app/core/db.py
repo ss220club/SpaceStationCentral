@@ -12,7 +12,10 @@ engine = create_engine(
     pool_recycle=DBConfig.pool_recycle,
     pool_pre_ping=DBConfig.pool_pre_ping,
 )
-
+"""
+SQLModel doesnt natively support async engines
+TODO: Use SQLAlchemy's async engine
+"""
 
 def init_db() -> None:
     return
