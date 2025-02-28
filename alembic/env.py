@@ -1,9 +1,6 @@
 from logging.config import fileConfig
 import os
 
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
-
 from alembic import context
 
 # this is the Alembic Config object, which provides
@@ -28,6 +25,8 @@ target_metadata = Base.metadata
 # ... etc.
 from app.core.db import engine
 db_url = os.getenv("DB_URL")  # Read from environment
+if db_url is None:
+    raise ValueError("DB_URL env var is not set")    
 config.set_main_option("sqlalchemy.url", db_url)
 
 

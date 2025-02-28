@@ -43,10 +43,10 @@ class Database(CustomBaseModel):
     pool_recycle: int = 3600
     pool_pre_ping: bool = True
 
-    needs_rebuild: bool = True
 
 class Redis(CustomBaseModel):
     connection_string: str = "redis://127.0.0.1:6379/0"
+
 
 class OAuth(CustomBaseModel):
     # From discord app's settings
