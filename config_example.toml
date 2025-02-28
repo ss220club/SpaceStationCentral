@@ -12,6 +12,7 @@ pool_pre_ping = true
 
 [redis]
 connection_string = "redis://default:user@hostname:6379"
+channel = "central"
 
 [oauth]
 client_secret = "12345678"
