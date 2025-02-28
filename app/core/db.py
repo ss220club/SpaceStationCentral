@@ -1,4 +1,4 @@
-from sqlmodel import SQLModel, create_engine
+from sqlmodel import create_engine
 
 from app.core.config import CONFIG
 
@@ -16,6 +16,7 @@ engine = create_engine(
 SQLModel doesnt natively support async engines
 TODO: Use SQLAlchemy's async engine
 """
+
 
 def init_db() -> None:
     return

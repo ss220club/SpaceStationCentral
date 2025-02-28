@@ -112,7 +112,7 @@ async def get_whitelisted_ckeys(session: SessionDep,
                           status.HTTP_404_NOT_FOUND: {"description": "Whitelist not found"},
                       })
 def get_whitelist(session: SessionDep,
-                  id: int): # pylint: disable=redefined-builtin
+                  id: int):  # pylint: disable=redefined-builtin
     wl = session.exec(select(Whitelist).where(Whitelist.id == id)).first()
 
     if wl is None:
@@ -123,6 +123,7 @@ def get_whitelist(session: SessionDep,
 
 # endregion
 # region Post
+
 
 WHITELIST_POST_RESPONSES = {
     **BEARER_DEP_RESPONSES,
@@ -241,7 +242,7 @@ async def get_whitelist_bans(session: SessionDep,
                               status.HTTP_200_OK: {"description": "Whitelist"},
                               status.HTTP_404_NOT_FOUND: {"description": "Whitelist not found"},
                           })
-def get_whitelist_ban(session, id): # pylint: disable=redefined-builtin
+def get_whitelist_ban(session, id):  # pylint: disable=redefined-builtin
     wl_ban = session.exec(select(WhitelistBan).where(
         WhitelistBan.id == id)).first()
 
@@ -253,6 +254,7 @@ def get_whitelist_ban(session, id): # pylint: disable=redefined-builtin
 
 # endregion
 # region Post
+
 
 BAN_POST_RESPONSES = {
     **BEARER_DEP_RESPONSES,

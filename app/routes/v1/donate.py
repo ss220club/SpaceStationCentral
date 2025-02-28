@@ -1,16 +1,15 @@
 import datetime
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, Request, status
 from sqlmodel import select
 from sqlmodel.sql.expression import SelectOfScalar
 
 from app.database.models import Donation, Player
 from app.deps import SessionDep, verify_bearer
-from app.routes.v1.player import create_player, get_or_create_player_by_discord_id
+from app.routes.v1.player import get_or_create_player_by_discord_id
 from app.schemas.donate import NewDonationDiscord
 from app.schemas.generic import PaginatedResponse, paginate_selection
-from app.schemas.player import NewPlayer
 
 logger = logging.getLogger(__name__)
 

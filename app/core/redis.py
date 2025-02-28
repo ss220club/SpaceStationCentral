@@ -1,4 +1,3 @@
-from typing import AsyncGenerator
 import redis.asyncio as redis
 
 from app.core.config import CONFIG

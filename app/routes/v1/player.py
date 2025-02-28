@@ -12,7 +12,7 @@ from app.deps import BEARER_DEP_RESPONSES, SessionDep, verify_bearer
 from app.fur_discord import DiscordOAuthClient
 from app.schemas.generic import PaginatedResponse
 from app.schemas.player import NewPlayer, PlayerPatch
-import app.core.redis as redis
+from app.core import redis
 
 logger = logging.getLogger(__name__)
 
@@ -91,13 +91,14 @@ async def callback(session: SessionDep, code: str, state: str) -> Player:
     discord_id = discord_user.id
 
     if link := session.exec(select(Player).where(
-        Player.discord_id == discord_id)).first():
+            Player.discord_id == discord_id)).first():
         # General player account already exists
         if link.ckey is not None:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT, detail="Player already linked")
 
-        logger.debug("Linking a preexisting player %s to %s", link.discord_id, ckey)
+        logger.debug("Linking a preexisting player %s to %s",
+                     link.discord_id, ckey)
         link.ckey = ckey
     else:
         link = Player(ckey=ckey, discord_id=discord_id)
