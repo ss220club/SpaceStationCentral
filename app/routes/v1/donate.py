@@ -8,7 +8,7 @@ from sqlmodel.sql.expression import SelectOfScalar
 from app.database.models import Donation, Player
 from app.deps import SessionDep, verify_bearer
 from app.routes.v1.player import get_or_create_player_by_discord_id
-from app.schemas.donate import NewDonationDiscord
+from app.schemas.donate import DonationPatch, NewDonationDiscord
 from app.schemas.generic import PaginatedResponse, paginate_selection
 
 logger = logging.getLogger(__name__)
@@ -46,6 +46,10 @@ async def get_donations(session: SessionDep,
     return paginate_selection(session, selection, request, page, page_size)
 
 
+@router.get("/{id}", status_code=status.HTTP_200_OK)
+async def get_donation_by_id(session: SessionDep, id: int) -> Donation:
+    return session.exec(select(Donation).where(Donation.id == id)).first()
+
 async def create_donation_helper(session: SessionDep, donation: Donation) -> Donation:
     session.add(donation)
     session.commit()
@@ -70,7 +74,21 @@ async def create_donation_by_discord(session: SessionDep, new_donation: NewDonat
 
     donation = Donation(
         player_id=player.id,
-        tier=new_donation.tier
+        tier=new_donation.tier,
+        issue_time=datetime.datetime.now(),
+        expiration_time=datetime.datetime.now() + datetime.timedelta(days=new_donation.duration_days),
+        valid=True
     )
 
     return await create_donation_helper(session, donation)
+
+
+@router.patch("/{id}", status_code=status.HTTP_200_OK, dependencies=[Depends(verify_bearer)])
+async def update_donation(session: SessionDep, id: int, donation_patch: DonationPatch) -> Donation:  # pylint: disable=redefined-builtin
+    donation = await get_donation_by_id(session, id)
+    update_data = donation_patch.model_dump(exclude_unset=True)
+
+    for key, value in update_data.items():
+        setattr(donation, key, value)
+
+    session.commit()

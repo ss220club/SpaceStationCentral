@@ -8,6 +8,7 @@ from sqlmodel.sql.expression import SelectOfScalar
 
 from app.database.models import Player, Whitelist, WhitelistBan
 from app.deps import BEARER_DEP_RESPONSES, SessionDep, verify_bearer
+from app.routes.v1.player import get_player_by_discord_id
 from app.schemas.generic import PaginatedResponse, paginate_selection
 from app.schemas.whitelist import (NEW_WHITELIST_BAN_TYPES,
                                    NEW_WHITELIST_TYPES, WhitelistPatch,
@@ -30,6 +31,7 @@ def select_only_active_whitelists(selection: SelectOfScalar[Whitelist]):
 def filter_whitelists(selection: SelectOfScalar[Whitelist],
                       ckey: str | None = None,
                       discord_id: str | None = None,
+                      admin_id: int | None = None,
                       server_type: str | None = None,
                       active_only: bool = True) -> SelectOfScalar[Whitelist]:
     if active_only:
@@ -38,6 +40,8 @@ def filter_whitelists(selection: SelectOfScalar[Whitelist],
         selection = selection.where(Player.ckey == ckey)
     if discord_id is not None:
         selection = selection.where(Player.discord_id == discord_id)
+    if admin_id is not None:
+        selection = selection.where(Whitelist.admin_id == admin_id)
     if server_type is not None:
         selection = selection.where(Whitelist.server_type == server_type)
     return selection
@@ -71,6 +75,7 @@ async def get_whitelists(session: SessionDep,
                          request: Request,
                          ckey: str | None = None,
                          discord_id: str | None = None,
+                         admin_discord_id: str | None = None,
                          server_type: str | None = None,
                          active_only: bool = True,
                          page: int = 1,
@@ -78,8 +83,10 @@ async def get_whitelists(session: SessionDep,
     selection = select(Whitelist).join(
         Player, Player.id == Whitelist.player_id)  # type: ignore
 
+    admin_id = get_player_by_discord_id(session, admin_discord_id)
+
     selection = filter_whitelists(
-        selection, ckey, discord_id, server_type, active_only)
+        selection, ckey, discord_id, admin_id, server_type, active_only)
 
     return paginate_selection(session, selection, request, page, page_size)
 
@@ -96,7 +103,7 @@ async def get_whitelisted_ckeys(session: SessionDep,
                                 page: int = 1,
                                 page_size: int = 50) -> PaginatedResponse[str]:
     selection = select(Player.ckey).join(
-        Whitelist, Player.id == Whitelist.player_id).distinct()  # type: ignore
+        Whitelist, Player.id == Whitelist.player_id).where(Player.ckey != None).distinct()  # type: ignore
 
     selection = filter_whitelists(selection,
                                   server_type=server_type,
@@ -112,7 +119,7 @@ async def get_whitelisted_ckeys(session: SessionDep,
                           status.HTTP_404_NOT_FOUND: {"description": "Whitelist not found"},
                       })
 def get_whitelist(session: SessionDep,
-                  id: int):  # pylint: disable=redefined-builtin
+                  id: int) -> Whitelist:  # pylint: disable=redefined-builtin
     wl = session.exec(select(Whitelist).where(Whitelist.id == id)).first()
 
     if wl is None:
