@@ -112,6 +112,27 @@ async def get_whitelisted_ckeys(session: SessionDep,
     return paginate_selection(session, selection, request, page, page_size)
 
 
+@whitelist_router.get("/discord_ids",
+                      status_code=status.HTTP_200_OK,
+                      responses={
+                          status.HTTP_200_OK: {"description": "Whitelisted discord ids"},
+                      })
+async def get_whitelisted_discord_ids(session: SessionDep,
+                                      request: Request,
+                                      server_type: str | None = None,
+                                      active_only: bool = True,
+                                      page: int = 1,
+                                      page_size: int = 50) -> PaginatedResponse[str]:
+    selection = select(Player.discord_id).join(
+        Whitelist, Player.id == Whitelist.player_id).distinct()  # type: ignore
+
+    selection = filter_whitelists(selection,
+                                  server_type=server_type,
+                                  active_only=active_only)
+
+    return paginate_selection(session, selection, request, page, page_size)
+
+
 @whitelist_router.get("/{id}",
                       status_code=status.HTTP_200_OK,
                       responses={
