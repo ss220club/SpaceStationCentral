@@ -83,10 +83,10 @@ async def get_whitelists(session: SessionDep,
     selection = select(Whitelist).join(
         Player, Player.id == Whitelist.player_id)  # type: ignore
 
-    admin = await get_player_by_discord_id(session, admin_discord_id)
+    admin = await get_player_by_discord_id(session, admin_discord_id) if admin_discord_id is not None else None
 
     selection = filter_whitelists(
-        selection, ckey, discord_id, admin.id, server_type, active_only)
+        selection, ckey, discord_id, admin.id if admin is not None else None, server_type, active_only)
 
     return paginate_selection(session, selection, request, page, page_size)
 
