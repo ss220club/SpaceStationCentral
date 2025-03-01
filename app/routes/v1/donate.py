@@ -92,3 +92,5 @@ async def update_donation(session: SessionDep, id: int, donation_patch: Donation
         setattr(donation, key, value)
 
     session.commit()
+    session.refresh(donation)
+    return donation

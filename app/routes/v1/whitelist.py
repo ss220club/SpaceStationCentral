@@ -83,10 +83,10 @@ async def get_whitelists(session: SessionDep,
     selection = select(Whitelist).join(
         Player, Player.id == Whitelist.player_id)  # type: ignore
 
-    admin_id = get_player_by_discord_id(session, admin_discord_id)
+    admin = await get_player_by_discord_id(session, admin_discord_id)
 
     selection = filter_whitelists(
-        selection, ckey, discord_id, admin_id, server_type, active_only)
+        selection, ckey, discord_id, admin.id, server_type, active_only)
 
     return paginate_selection(session, selection, request, page, page_size)
 
@@ -147,6 +147,7 @@ WHITELIST_POST_RESPONSES = {
 async def create_whitelist(session: SessionDep, new_wl: NEW_WHITELIST_TYPES, ignore_bans: bool = False) -> Whitelist:
     player_resolver, admin_resolver = resolve_whitelist_type(new_wl)
 
+    # TODO: wls only by discord and use `get_or_create_player_by_discord_id()`
     player = session.exec(select(Player).where(
         player_resolver(new_wl))).first()
     admin = session.exec(select(Player).where(admin_resolver(new_wl))).first()
@@ -166,7 +167,9 @@ async def create_whitelist(session: SessionDep, new_wl: NEW_WHITELIST_TYPES, ign
                                 detail="Player is banned from this type of whitelist.")
 
     wl = Whitelist(**new_wl.model_dump(),
-                   player_id=player.id, admin_id=admin.id)
+                   expiration_time=datetime.datetime.now() + datetime.timedelta(days=new_wl.duration_days),
+                   player_id=player.id,
+                   admin_id=admin.id)
     session.add(wl)
     session.commit()
     session.refresh(wl)

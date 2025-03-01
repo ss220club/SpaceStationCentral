@@ -66,3 +66,4 @@ def resolve_whitelist_type(new_wl: NEW_WHITELIST_TYPES) -> tuple[Callable[[NEW_W
 
 class WhitelistPatch(BaseModel):
     valid: bool | None = None
+    expiration_time: datetime.datetime | None = None
