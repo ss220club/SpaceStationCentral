@@ -47,7 +47,7 @@ async def get_donations(session: SessionDep,
 
 
 @router.get("/{id}", status_code=status.HTTP_200_OK)
-async def get_donation_by_id(session: SessionDep, id: int) -> Donation:
+async def get_donation_by_id(session: SessionDep, id: int) -> Donation: # pylint: disable=redefined-builtin
     return session.exec(select(Donation).where(Donation.id == id)).first()
 
 async def create_donation_helper(session: SessionDep, donation: Donation) -> Donation:

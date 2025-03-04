@@ -103,7 +103,7 @@ async def get_whitelisted_ckeys(session: SessionDep,
                                 page: int = 1,
                                 page_size: int = 50) -> PaginatedResponse[str]:
     selection = select(Player.ckey).join(
-        Whitelist, Player.id == Whitelist.player_id).where(Player.ckey != None).distinct()  # type: ignore
+        Whitelist, Player.id == Whitelist.player_id).where(Player.ckey != None).distinct()  # type: ignore # pylint: disable=singleton-comparison
 
     selection = filter_whitelists(selection,
                                   server_type=server_type,

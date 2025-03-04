@@ -1,7 +1,7 @@
 import datetime
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import RedirectResponse
 from sqlalchemy import func
 from sqlmodel import Session, select
