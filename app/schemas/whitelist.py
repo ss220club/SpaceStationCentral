@@ -47,8 +47,8 @@ class NewWhitelistBanDiscord(NewWhitelistDiscord, NewWhitelistBanBase):
     pass
 
 
-NEW_WHITELIST_TYPES = NewWhitelistInternal | NewWhitelistDiscord | NewWhitelistCkey
-NEW_WHITELIST_BAN_TYPES = NewWhitelistBanInternal | NewWhitelistBanDiscord | NewWhitelistBanCkey
+NEW_WHITELIST_TYPES =  NewWhitelistDiscord | NewWhitelistCkey
+NEW_WHITELIST_BAN_TYPES =  NewWhitelistBanDiscord | NewWhitelistBanCkey
 
 
 def resolve_whitelist_type(new_wl: NEW_WHITELIST_TYPES) -> tuple[Callable[[NEW_WHITELIST_TYPES], SelectOfScalar], Callable[[NEW_WHITELIST_TYPES], SelectOfScalar]]:

@@ -50,6 +50,7 @@ def filter_whitelists(selection: SelectOfScalar[Whitelist],
 def filter_whitelist_bans(selection: SelectOfScalar[WhitelistBan],
                           ckey: str | None = None,
                           discord_id: str | None = None,
+                          admin_id: int | None = None,
                           server_type: str | None = None,
                           active_only: bool = True) -> SelectOfScalar[WhitelistBan]:
     if active_only:
@@ -58,6 +59,8 @@ def filter_whitelist_bans(selection: SelectOfScalar[WhitelistBan],
         selection = selection.where(Player.ckey == ckey)
     if discord_id is not None:
         selection = selection.where(Player.discord_id == discord_id)
+    if admin_id is not None:
+        selection = selection.where(WhitelistBan.admin_id == admin_id)
     if server_type is not None:
         selection = selection.where(WhitelistBan.server_type == server_type)
     return selection
@@ -243,6 +246,7 @@ async def get_whitelist_bans(session: SessionDep,
                              request: Request,
                              ckey: str | None = None,
                              discord_id: str | None = None,
+                             admin_discord_id: str | None = None,
                              server_type: str | None = None,
                              active_only: bool = True,
                              page: int = 1,
@@ -250,8 +254,10 @@ async def get_whitelist_bans(session: SessionDep,
     selection = select(WhitelistBan).join(
         Player, Player.id == WhitelistBan.player_id)  # type: ignore
 
+    admin = await get_player_by_discord_id(session, admin_discord_id) if admin_discord_id is not None else None
+
     selection = filter_whitelist_bans(
-        selection, ckey, discord_id, server_type, active_only)
+        selection, ckey, discord_id, admin.id if admin is not None else None, server_type, active_only)
 
     # type: ignore # pylint: disable=not-callable
     total = session.exec(selection.with_only_columns(func.count())).first()
@@ -324,7 +330,9 @@ async def create_whitelist_ban(session: SessionDep,
         )
 
     ban = WhitelistBan(**new_ban.model_dump(),
-                       player_id=player.id, admin_id=admin.id)
+                       expiration_time=datetime.datetime.now() + datetime.timedelta(days=new_ban.duration_days),
+                       player_id=player.id,
+                       admin_id=admin.id)
     session.add(ban)
     session.commit()
     session.refresh(ban)
