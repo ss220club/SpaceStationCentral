@@ -1,0 +1,65 @@
+[project]
+name = "SpaceStationCentral"
+version = "0.1.0"
+description = "SS220 API for multiple servers and infrastructure"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "aiocache>=0.12.3",
+    "aiohttp>=3.10.11",
+    "alembic>=1.14.1",
+    "fastapi[standard]>=0.112.0,<0.113.0",
+    "mysql-connector-python>=9.0.0",
+    "psycopg2-binary>=2.9.10",
+    "pydantic>=2.8.2,<3.0.0",
+    "redis>=5.2.1",
+    "sqlalchemy>=2.0.33,<3.0.0",
+    "sqlmodel>=0.0.24",
+]
+
+[dependency-groups]
+dev = [
+    "autopep8>=2.3.1",
+    "isort>=5.13.2",
+    "pytest>=8.3.5",
+    "pytest-asyncio>=0.24.0",
+    "pytest-mock>=3.14.0",
+    "ruff>=0.9.10",
+]
+
+[tool.uv]
+required-version = ">=0.6.5"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py38"
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "I",   # isort
+    "UP",  # pyupgrade
+    "N",   # pep8-naming
+    "W",   # pycodestyle warnings
+    "PL",  # pylint
+    "B",   # flake8-bugbear
+    "SIM", # flake8-simplify
+    "RUF", # Ruff-specific rules
+]
+ignore = ["E203", "E501", "PLR0913"]
+fixable = ["A", "B", "C", "D", "E", "F", "I"]
+exclude = [
+    ".git",
+    ".venv",
+    "__pycache__",
+    "*.egg-info",
+]
+
+[tool.ruff.isort]
+known-first-party = ["app"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
