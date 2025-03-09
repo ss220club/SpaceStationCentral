@@ -19,11 +19,5 @@ alembic upgrade head
 ## Запуск
 
 ```sh
-docker run -v $(pwd)/.config.toml:/.config.toml:ro \
-           -v $(pwd)/logs:/logs \
-           --add-host=host.docker.internal:host-gateway \
-           -d \
-           -p 8000:8000 \
-           --name SpaceStationCentral \
-           ghcr.io/ss220club/spacestationcentral:latest
+docker run -v ./.config.toml:/.config.toml:ro -v ./logs:/logs --add-host=host.docker.internal:host-gateway -d -p 8000:8000 --name SpaceStationCentral ghcr.io/ss220club/spacestationcentral:latest
 ```
