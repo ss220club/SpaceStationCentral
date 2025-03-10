@@ -1,7 +1,7 @@
 [project]
 name = "SpaceStationCentral"
 version = "0.1.0"
-description = "SS220 API for multiple servers and infrastructure"
+description = "SS220 API for game servers and infrastructure"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
@@ -16,50 +16,134 @@ dependencies = [
     "sqlalchemy>=2.0.33,<3.0.0",
     "sqlmodel>=0.0.24",
 ]
-
 [dependency-groups]
 dev = [
     "autopep8>=2.3.1",
-    "isort>=5.13.2",
+    "hatch>=1.14.0",
+    "pyright>=1.1.396",
     "pytest>=8.3.5",
     "pytest-asyncio>=0.24.0",
+    "pytest-cov>=6.0.0",
     "pytest-mock>=3.14.0",
     "ruff>=0.9.10",
 ]
 
 [tool.uv]
 required-version = ">=0.6.5"
-
-[tool.hatch.build.targets.wheel]
-packages = ["app"]
-
-[tool.ruff]
-line-length = 120
-target-version = "py38"
-select = [
-    "E",   # pycodestyle errors
-    "F",   # pyflakes
-    "I",   # isort
-    "UP",  # pyupgrade
-    "N",   # pep8-naming
-    "W",   # pycodestyle warnings
-    "PL",  # pylint
-    "B",   # flake8-bugbear
-    "SIM", # flake8-simplify
-    "RUF", # Ruff-specific rules
-]
-ignore = ["E203", "E501", "PLR0913"]
-fixable = ["A", "B", "C", "D", "E", "F", "I"]
-exclude = [
-    ".git",
-    ".venv",
-    "__pycache__",
-    "*.egg-info",
-]
-
-[tool.ruff.isort]
-known-first-party = ["app"]
+package = false
 
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling>=1.27.0"]
 build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app", "tests"]
+
+[tool.hatch.envs.default]
+path = ".venv"
+
+[tool.hatch.envs.default.scripts]
+test = "pytest"
+test-cov = "pytest --cov=app --cov-report=term-missing --cov-report=html"
+lint = "ruff check ."
+lint-fix = "ruff check --fix ."
+format = "ruff format ."
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+asyncio_mode = "auto"
+addopts = "--cov=app --cov-report=term-missing"
+
+[tool.coverage.run]
+branch = true
+relative_files = true
+source = ["app", "tests"]
+
+[tool.coverage.report]
+skip_covered = true
+show_missing = true
+
+[tool.ruff]
+src = ["app", "tests"]
+line-length = 120
+target-version = "py313"
+exclude = [
+    "__pycache__",
+    "__pypackages__",
+    "_build",
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git-rewrite",
+    ".git",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "*.egg-info",
+    "alembic/versions",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+]
+
+[tool.ruff.lint]
+select = [
+    "ANN",  # flake8-annotations (type hints)
+    "ARG",  # flake8-unused-arguments
+    "B",    # flake8-bugbear
+    "C4",   # flake8-comprehensions
+    # "D",    # pydocstyle
+    "DTZ",  # flake8-datetimez
+    "E",    # pycodestyle errors
+    "F",    # pyflakes
+    "FAST", # FastAPI
+    "I",    # isort
+    "N",    # pep8-naming
+    "PL",   # pylint
+    "PTH",  # flake8-use-pathlib
+    "PYI",  # flake8-pyi
+    "RET",  # flake8-return
+    "RUF",  # Ruff-specific rules
+    "SIM",  # flake8-simplify
+    "TC",   # flake8-type-checking
+    "TID",  # flake8-tidy-imports
+    "UP",   # pyupgrade
+    "W",    # pycodestyle warnings
+]
+ignore = [
+    "D100",    # Missing docstring in public module
+    "D104",    # Missing docstring in public package
+    "D203",    # Incorrect blank line before class
+    "D212",    # Multi-line summary first line
+    "D401",    # First line of docstring should be in imperative mood
+    "PLR0913", # Too many arguments in function definition
+]
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
+lines-after-imports = 2
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
+[tool.ruff.lint.per-file-ignores]
+"app/tests/**/*.py" = ["S101", "TID252", "PLR2004"]
+
+[tool.pyright]
+typeCheckingMode = "strict"
+pythonVersion = "3.13"
+venvPath = ".venv"
+include = ["app", "tests"]
+exclude = [
+    "**/alembic/versions"
+]
+reportUnknownMemberType = false
