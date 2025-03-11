@@ -22,7 +22,7 @@ T = TypeVar("T")
 whitelist_router = APIRouter(prefix="/whitelists", tags=["Whitelist"])
 
 
-def filter_whitelists(
+def __filter_whitelists(
     selection: Select[T],
     ckey: str | None = None,
     discord_id: str | None = None,
@@ -71,7 +71,7 @@ async def get_whitelists(
 ) -> PaginatedResponse[Whitelist]:
     selection = cast(Select[Whitelist], select(Whitelist).join(Player))
     admin = await get_player_by_discord_id(session, admin_discord_id) if admin_discord_id is not None else None
-    selection = filter_whitelists(selection, ckey, discord_id, admin and admin.id, server_type, active_only)
+    selection = __filter_whitelists(selection, ckey, discord_id, admin and admin.id, server_type, active_only)
 
     return paginate_selection(session, selection, request, page, page_size)
 
@@ -92,7 +92,7 @@ async def get_whitelisted_ckeys(
     page_size: int = 50,
 ) -> PaginatedResponse[str]:
     selection = cast(Select[str], select(Player.ckey).join(Whitelist).where(ne(Player.ckey, None)).distinct())
-    selection = filter_whitelists(selection, server_type=server_type, active_only=active_only)
+    selection = __filter_whitelists(selection, server_type=server_type, active_only=active_only)
 
     return paginate_selection(session, selection, request, page, page_size)
 
@@ -113,7 +113,7 @@ async def get_whitelisted_discord_ids(
     page_size: int = 50,
 ) -> PaginatedResponse[str]:
     selection = cast(Select[str], select(Player.discord_id).join(Whitelist).distinct())
-    selection = filter_whitelists(selection, server_type=server_type, active_only=active_only)
+    selection = __filter_whitelists(selection, server_type=server_type, active_only=active_only)
 
     return paginate_selection(session, selection, request, page, page_size)
 
