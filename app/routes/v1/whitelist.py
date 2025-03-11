@@ -1,6 +1,6 @@
 import logging
 from datetime import UTC, datetime
-from operator import eq, gt
+from operator import eq, gt, ne
 from typing import TypeVar, cast
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -91,7 +91,7 @@ async def get_whitelisted_ckeys(
     page: int = 1,
     page_size: int = 50,
 ) -> PaginatedResponse[str]:
-    selection = cast(Select[str], select(Player.ckey).join(Whitelist).where(Player.ckey is not None).distinct())
+    selection = cast(Select[str], select(Player.ckey).join(Whitelist).where(ne(Player.ckey, None)).distinct())
     selection = filter_whitelists(selection, server_type=server_type, active_only=active_only)
 
     return paginate_selection(session, selection, request, page, page_size)
@@ -177,8 +177,8 @@ async def create_whitelist(session: SessionDep, new_wl: NewWhitelist, ignore_ban
     wl = Whitelist(
         **new_wl.model_dump(),
         expiration_time=new_wl.get_expiration_time(),
-        player_id=cast(int, player.id),
-        admin_id=cast(int, admin.id),
+        player_id=player.id,  # type: ignore[reportArgumentType]
+        admin_id=admin.id,  # type: ignore[reportArgumentType]
     )
     session.add(wl)
     session.commit()
@@ -328,8 +328,8 @@ async def create_whitelist_ban(
     ban = WhitelistBan(
         **new_ban.model_dump(),
         expiration_time=new_ban.get_expiration_time(),
-        player_id=cast(int, player.id),
-        admin_id=cast(int, admin.id),
+        player_id=player.id,  # type: ignore
+        admin_id=admin.id,  # type: ignore
     )
     session.add(ban)
     session.commit()

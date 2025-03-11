@@ -3,7 +3,6 @@ __pycache__
 uv.lock
 .env
 *.log
-.config.toml
 run_cl.bat
 .idea
 *.pem

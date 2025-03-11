@@ -193,9 +193,11 @@ async def get_players(
 )
 async def create_player(session: SessionDep, new_player: NewPlayer) -> Player:
     """Used internally and for force linking players manually."""
+    # TODO: considering HTTPException as success really smells here
     try:
         await get_player_by_discord_id(session, new_player.discord_id)
-        await get_player_by_ckey(session, new_player.ckey)
+        if new_player.ckey:
+            await get_player_by_ckey(session, new_player.ckey)
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Player already exists")
     except HTTPException as e:
         if e.status_code != status.HTTP_404_NOT_FOUND:

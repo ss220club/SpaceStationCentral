@@ -8,4 +8,4 @@ class PlayerPatch(BaseModel):
 
 class NewPlayer(BaseModel):
     discord_id: str
-    ckey: str
+    ckey: str | None = None

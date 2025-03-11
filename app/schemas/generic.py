@@ -1,11 +1,14 @@
-from typing import Any, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
 from app.deps import SessionDep
 from fastapi import Request
 from pydantic import BaseModel
-from sqlalchemy import func
-from sqlmodel import select
+from sqlmodel import func, select
 from sqlmodel.sql.expression import Select
+
+
+if TYPE_CHECKING:
+    from fastapi.datastructures import URL
 
 
 T = TypeVar("T")
@@ -18,14 +21,19 @@ class PaginatedResponse(BaseModel, Generic[T]):
     page_size: int
     next_page: int | None = None
     previous_page: int | None = None
+    next_page_path: str | None = None
+    previous_page_path: str | None = None
 
     def __init__(self, **data: Any) -> None:  # noqa: ANN401
         super().__init__(**data)
+        url: URL | None = data.get("current_url")
 
         if (self.page * self.page_size) < self.total:
             self.next_page = self.page + 1
+            self.next_page_path = url.include_query_params(page=self.next_page).path if url else None
         if self.page > 1:
             self.previous_page = self.page - 1
+            self.previous_page_path = url.include_query_params(page=self.previous_page).path if url else None
 
 
 def paginate_selection(

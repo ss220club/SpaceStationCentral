@@ -2,7 +2,6 @@ import random
 import string
 from collections.abc import Callable, Generator
 from datetime import UTC, datetime, timedelta
-from typing import cast
 
 import pytest
 from app.database.models import APIAuth, Player, Whitelist
@@ -121,8 +120,8 @@ def create_whitelist(
     valid: bool,
 ) -> Whitelist:
     wl = Whitelist(
-        player_id=cast(int, player.id),
-        admin_id=cast(int, admin.id),
+        player_id=player.id,  # type: ignore[reportArgumentType]
+        admin_id=admin.id,  # type: ignore[reportArgumentType]
         server_type=server_type,
         expiration_time=expiration_time,
         valid=valid,

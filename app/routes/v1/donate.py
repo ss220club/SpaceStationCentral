@@ -78,7 +78,7 @@ async def create_donation_by_discord(session: SessionDep, new_donation: NewDonat
     player = await get_or_create_player_by_discord_id(session, new_donation.discord_id)
 
     donation = Donation(
-        player_id=cast(int, player.id),
+        player_id=player.id,  # type: ignore[reportArgumentType]
         tier=new_donation.tier,
         issue_time=datetime.now(UTC),
         expiration_time=datetime.now(UTC) + timedelta(days=new_donation.duration_days),
