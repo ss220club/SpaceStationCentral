@@ -1,7 +1,10 @@
-from logging.config import fileConfig
 import os
+from logging.config import fileConfig
 
 from alembic import context
+from app.core.db import engine
+from app.database.models import SQLModel as Base
+
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -16,22 +19,21 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-from app.database.models import SQLModel as Base
 target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
-from app.core.db import engine
 db_url = os.getenv("DB_URL")  # Read from environment
 if db_url is None:
-    raise ValueError("DB_URL env var is not set")    
+    raise ValueError("DB_URL env var is not set")
 config.set_main_option("sqlalchemy.url", db_url)
 
 
 def run_migrations_offline() -> None:
-    """Run migrations in 'offline' mode.
+    """
+    Run migrations in 'offline' mode.
 
     This configures the context with just a URL
     and not an Engine, though an Engine is acceptable
@@ -55,7 +57,8 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
-    """Run migrations in 'online' mode.
+    """
+    Run migrations in 'online' mode.
 
     In this scenario we need to create an Engine
     and associate a connection with the context.
@@ -64,9 +67,7 @@ def run_migrations_online() -> None:
     connectable = engine
 
     with connectable.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata
-        )
+        context.configure(connection=connection, target_metadata=target_metadata)
 
         with context.begin_transaction():
             context.run_migrations()

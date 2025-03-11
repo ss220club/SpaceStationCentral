@@ -2,6 +2,7 @@ import redis.asyncio as redis
 
 from app.core.config import CONFIG
 
+
 REDIS_POOL = redis.ConnectionPool.from_url(CONFIG.redis.connection_string)
 
 

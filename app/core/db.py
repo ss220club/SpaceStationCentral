@@ -2,6 +2,7 @@ from sqlmodel import create_engine
 
 from app.core.config import CONFIG
 
+
 DBConfig = CONFIG.database
 
 engine = create_engine(

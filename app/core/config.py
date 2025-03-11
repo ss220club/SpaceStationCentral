@@ -1,12 +1,12 @@
 import logging
 import tomllib
 from io import BufferedReader
+from pathlib import Path
 
 from pydantic import BaseModel, ValidationError
 
-logger = logging.getLogger(__name__)
 
-# pylint: disable=R0903
+logger = logging.getLogger(__name__)
 
 
 class CustomBaseModel(BaseModel):
@@ -25,7 +25,9 @@ class CustomBaseModel(BaseModel):
 
 class General(CustomBaseModel):
     project_name: str = "Space Station Central"
-    project_desc: str = "API для объеденения множества серверов SS13 и SS14 в одну систему. От него несет вульпой, но он работает."
+    project_desc: str = (
+        "API для объеденения множества серверов SS13 и SS14 в одну систему. От него несет вульпой, но он работает."
+    )
     project_ver: str = "0.1.0"
     favicon_path: str = "app/assets/favicon.png"
 
@@ -74,7 +76,7 @@ def parse_config(f: BufferedReader) -> Config:
 
 def load_config() -> Config:
     try:
-        with open(".config.toml", "rb") as f:
+        with Path(".config.toml").open("rb") as f:
             return parse_config(f)
     except FileNotFoundError:
         logger.info("Config file not found, using default.")
