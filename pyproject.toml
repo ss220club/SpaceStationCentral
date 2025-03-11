@@ -44,9 +44,7 @@ path = ".venv"
 
 [tool.hatch.envs.default.scripts]
 test = "pytest"
-test-cov = "pytest --cov=app --cov-report=term-missing --cov-report=html"
-lint = "ruff check ."
-lint-fix = "ruff check --fix ."
+lint = "uv run scripts/lint.py"
 format = "ruff format ."
 
 [tool.pytest.ini_options]

@@ -24,9 +24,7 @@ jobs:
           enable-cache: true
 
       - name: Lint the code
-        uses: astral-sh/ruff-action@v3
-        with:
-          version-file: "pyproject.toml"
+        run: hatch run lint
 
   test:
     runs-on: ubuntu-latest
@@ -42,4 +40,4 @@ jobs:
 
       - name: Run tests
         run: |
-          uv run --frozen pytest
+          hatch run test

@@ -4,7 +4,7 @@ from typing import cast
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlmodel import select
-from sqlmodel.sql.expression import SelectOfScalar
+from sqlmodel.sql.expression import Select
 
 from app.database.models import Donation, Player
 from app.deps import SessionDep, verify_bearer
@@ -19,11 +19,11 @@ router = APIRouter(prefix="/donates", tags=["Donate"])
 
 
 def filter_donations(
-    selection: SelectOfScalar[Donation],
+    selection: Select[Donation],
     ckey: str | None = None,
     discord_id: str | None = None,
     active_only: bool = True,
-) -> SelectOfScalar[Donation]:
+) -> Select[Donation]:
     if ckey:
         selection = selection.where(Player.ckey == ckey)
     if discord_id:
@@ -43,8 +43,7 @@ async def get_donations(
     page: int = 1,
     page_size: int = 50,
 ) -> PaginatedResponse[Donation]:
-    selection = select(Donation).join(Player)
-
+    selection = cast(Select[Donation], select(Donation).join(Player))
     selection = filter_donations(selection, ckey, discord_id, active_only)
 
     return paginate_selection(session, selection, request, page, page_size)
