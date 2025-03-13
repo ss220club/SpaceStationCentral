@@ -47,6 +47,7 @@ path = ".venv"
 test = "pytest"
 lint = "uv run scripts/lint.py"
 format = "ruff format ."
+lock = "uv sync && uv pip compile pyproject.toml -o requirements.lock --universal"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -125,6 +126,7 @@ ignore = [
     "D212",    # Multi-line summary first line
     "D401",    # First line of docstring should be in imperative mood
     "PLR0913", # Too many arguments in function definition
+    "TC006",   # Add quotes to type expression in `typing.cast()`
 ]
 
 [tool.ruff.lint.isort]

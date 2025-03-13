@@ -21,3 +21,13 @@ alembic upgrade head
 ```sh
 docker run -v ./.config.toml:/.config.toml:ro -v ./logs:/logs --add-host=host.docker.internal:host-gateway -d -p 8000:8000 --name SpaceStationCentral ghcr.io/ss220club/spacestationcentral:latest
 ```
+
+## Разработка
+
+После клонирования репозитария, установите менеджер `uv` и все зависимости проекта, включая dev-зависимости:
+
+```sh
+pip install uv
+uv venv
+uv sync --frozen
+```
