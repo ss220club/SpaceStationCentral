@@ -3,7 +3,7 @@ import sys
 
 
 COMMANDS = [
-    "ruff check app tests",
+    "ruff check --no-preview app tests",
     "basedpyright app tests",
 ]
 
