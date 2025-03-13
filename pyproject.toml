@@ -19,13 +19,14 @@ dependencies = [
 [dependency-groups]
 dev = [
     "autopep8>=2.3.1",
+    "basedpyright>=1.28.1",
     "hatch>=1.14.0",
-    "pyright>=1.1.396",
     "pytest>=8.3.5",
     "pytest-asyncio>=0.24.0",
     "pytest-cov>=6.0.0",
     "pytest-mock>=3.14.0",
     "ruff>=0.9.10",
+    "types-redis>=4.6.0.20241004",
 ]
 
 [tool.uv]
@@ -136,12 +137,14 @@ ban-relative-imports = "all"
 [tool.ruff.lint.per-file-ignores]
 "app/tests/**/*.py" = ["S101", "TID252", "PLR2004"]
 
-[tool.pyright]
-typeCheckingMode = "strict"
+[tool.basedpyright]
+typeCheckingMode = "recommended"
 pythonVersion = "3.13"
 venvPath = ".venv"
 include = ["app", "tests"]
 exclude = [
     "**/alembic/versions"
 ]
-reportUnknownMemberType = false
+reportAny = false
+reportExplicitAny = false
+reportUnusedCallResult = false

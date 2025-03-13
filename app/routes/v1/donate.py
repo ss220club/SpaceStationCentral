@@ -1,6 +1,6 @@
 import logging
 from datetime import UTC, datetime, timedelta
-from typing import cast
+from typing import TypeVar, cast
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlmodel import select
@@ -17,13 +17,15 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/donates", tags=["Donate"])
 
+T = TypeVar("T")
+
 
 def filter_donations(
-    selection: Select[Donation],
+    selection: Select[tuple[T, ...]],
     ckey: str | None = None,
     discord_id: str | None = None,
     active_only: bool = True,
-) -> Select[Donation]:
+) -> Select[tuple[T, ...]]:
     if ckey:
         selection = selection.where(Player.ckey == ckey)
     if discord_id:
@@ -43,7 +45,7 @@ async def get_donations(
     page: int = 1,
     page_size: int = 50,
 ) -> PaginatedResponse[Donation]:
-    selection = cast(Select[Donation], select(Donation).join(Player))
+    selection = cast(Select[tuple[Donation]], select(Donation).join(Player))  # pyright: ignore[reportInvalidCast]
     selection = filter_donations(selection, ckey, discord_id, active_only)
 
     return paginate_selection(session, selection, request, page, page_size)
@@ -78,7 +80,7 @@ async def create_donation_by_discord(session: SessionDep, new_donation: NewDonat
     player = await get_or_create_player_by_discord_id(session, new_donation.discord_id)
 
     donation = Donation(
-        player_id=player.id,  # type: ignore[reportArgumentType]
+        player_id=player.id,  # pyright: ignore[reportArgumentType]
         tier=new_donation.tier,
         issue_time=datetime.now(UTC),
         expiration_time=datetime.now(UTC) + timedelta(days=new_donation.duration_days),

@@ -4,7 +4,7 @@ import sys
 
 COMMANDS = [
     "ruff check app tests",
-    "pyright app tests",
+    "basedpyright app tests",
 ]
 
 

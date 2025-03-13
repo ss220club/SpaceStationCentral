@@ -1,11 +1,12 @@
-from abc import ABC, abstractmethod
+from abc import ABCMeta, abstractmethod
 from datetime import UTC, datetime, timedelta
+from typing import override
 
 from app.database.models import Player
 from pydantic import BaseModel
 
 
-class NewWhitelistBase(BaseModel, ABC):
+class NewWhitelistBase(BaseModel, metaclass=ABCMeta):
     server_type: str
     duration_days: int
     valid: bool = True
@@ -22,7 +23,7 @@ class NewWhitelistBase(BaseModel, ABC):
         pass
 
 
-class NewWhitelistBanBase(NewWhitelistBase):
+class NewWhitelistBanBase(NewWhitelistBase, metaclass=ABCMeta):
     reason: str | None = None
 
 
@@ -30,9 +31,11 @@ class NewWhitelistCkey(NewWhitelistBase):
     player_ckey: str
     admin_ckey: str
 
+    @override
     def get_player_clause(self) -> bool:
         return Player.ckey == self.player_ckey
 
+    @override
     def get_admin_clause(self) -> bool:
         return Player.ckey == self.admin_ckey
 
@@ -45,9 +48,11 @@ class NewWhitelistDiscord(NewWhitelistBase):
     player_discord_id: str
     admin_discord_id: str
 
+    @override
     def get_player_clause(self) -> bool:
         return Player.discord_id == self.player_discord_id
 
+    @override
     def get_admin_clause(self) -> bool:
         return Player.discord_id == self.admin_discord_id
 

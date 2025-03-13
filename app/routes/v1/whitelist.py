@@ -23,13 +23,13 @@ whitelist_router = APIRouter(prefix="/whitelists", tags=["Whitelist"])
 
 
 def __filter_whitelists(
-    selection: Select[T],
+    selection: Select[tuple[T, ...]],
     ckey: str | None = None,
     discord_id: str | None = None,
     admin_id: int | None = None,
     server_type: str | None = None,
     active_only: bool = True,
-) -> Select[T]:
+) -> Select[tuple[T, ...]]:
     if active_only:
         selection = select_only_active_whitelists(selection)
     if ckey is not None:
@@ -43,7 +43,7 @@ def __filter_whitelists(
     return selection
 
 
-def select_only_active_whitelists(selection: Select[T]) -> Select[T]:
+def select_only_active_whitelists(selection: Select[tuple[T, ...]]) -> Select[tuple[T, ...]]:
     return selection.where(Whitelist.valid).where(Whitelist.expiration_time > datetime.now(UTC))
 
 
@@ -69,7 +69,7 @@ async def get_whitelists(
     page: int = 1,
     page_size: int = 50,
 ) -> PaginatedResponse[Whitelist]:
-    selection = cast(Select[Whitelist], select(Whitelist).join(Player))
+    selection = cast(Select[tuple[Whitelist]], select(Whitelist).join(Player))  # pyright: ignore[reportInvalidCast]
     admin = await get_player_by_discord_id(session, admin_discord_id) if admin_discord_id is not None else None
     selection = __filter_whitelists(selection, ckey, discord_id, admin and admin.id, server_type, active_only)
 
@@ -91,7 +91,7 @@ async def get_whitelisted_ckeys(
     page: int = 1,
     page_size: int = 50,
 ) -> PaginatedResponse[str]:
-    selection = cast(Select[str], select(Player.ckey).join(Whitelist).where(ne(Player.ckey, None)).distinct())
+    selection = cast(Select[tuple[str]], select(Player.ckey).join(Whitelist).where(ne(Player.ckey, None)).distinct())  # pyright: ignore[reportInvalidCast]
     selection = __filter_whitelists(selection, server_type=server_type, active_only=active_only)
 
     return paginate_selection(session, selection, request, page, page_size)
@@ -112,7 +112,7 @@ async def get_whitelisted_discord_ids(
     page: int = 1,
     page_size: int = 50,
 ) -> PaginatedResponse[str]:
-    selection = cast(Select[str], select(Player.discord_id).join(Whitelist).distinct())
+    selection = cast(Select[tuple[str]], select(Player.discord_id).join(Whitelist).distinct())  # pyright: ignore[reportInvalidCast]
     selection = __filter_whitelists(selection, server_type=server_type, active_only=active_only)
 
     return paginate_selection(session, selection, request, page, page_size)
@@ -160,12 +160,12 @@ async def create_whitelist(session: SessionDep, new_wl: NewWhitelist, ignore_ban
 
     if not ignore_bans:
         selection = cast(
-            Select[WhitelistBan],
+            Select[tuple[WhitelistBan]],
             (
                 select(WhitelistBan)
                 .where(WhitelistBan.player_id == player.id)
                 .where(WhitelistBan.server_type == new_wl.server_type)
-            ),
+            ),  # pyright: ignore[reportInvalidCast]
         )
         selection = select_only_active_whitelist_bans(selection)
 
@@ -177,8 +177,8 @@ async def create_whitelist(session: SessionDep, new_wl: NewWhitelist, ignore_ban
     wl = Whitelist(
         **new_wl.model_dump(),
         expiration_time=new_wl.get_expiration_time(),
-        player_id=player.id,  # type: ignore[reportArgumentType]
-        admin_id=admin.id,  # type: ignore[reportArgumentType]
+        player_id=player.id,  # pyright: ignore[reportArgumentType]
+        admin_id=admin.id,  # pyright: ignore[reportArgumentType]
     )
     session.add(wl)
     session.commit()
@@ -257,7 +257,7 @@ async def get_whitelist_bans(
     page: int = 1,
     page_size: int = 50,
 ) -> PaginatedResponse[WhitelistBan]:
-    selection = cast(Select[WhitelistBan], select(WhitelistBan).join(Player))
+    selection = cast(Select[tuple[WhitelistBan]], select(WhitelistBan).join(Player))  # pyright: ignore[reportInvalidCast]
 
     admin = await get_player_by_discord_id(session, admin_discord_id) if admin_discord_id is not None else None
 
@@ -328,8 +328,8 @@ async def create_whitelist_ban(
     ban = WhitelistBan(
         **new_ban.model_dump(),
         expiration_time=new_ban.get_expiration_time(),
-        player_id=player.id,  # type: ignore
-        admin_id=admin.id,  # type: ignore
+        player_id=player.id,  # pyright: ignore[reportArgumentType]
+        admin_id=admin.id,  # pyright: ignore[reportArgumentType]
     )
     session.add(ban)
     session.commit()

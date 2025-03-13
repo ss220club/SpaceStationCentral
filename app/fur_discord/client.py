@@ -1,8 +1,9 @@
+# pyright: reportUnknownMemberType = false
 import re
 from typing import Any
 
 import aiohttp
-from aiocache import cached  # type: ignore
+from aiocache import cached  # pyright: ignore[reportMissingTypeStubs]
 from fastapi import Depends, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from starlette.datastructures import URL
@@ -30,10 +31,10 @@ class DiscordOAuthClient:
     def __init__(
         self, client_id: int, client_secret: str, redirect_uri: str, scopes: tuple[str, ...] = ("identify",)
     ) -> None:
-        self.client_id = client_id
-        self.client_secret = client_secret
-        self.redirect_uri = redirect_uri
-        self.scopes = "%20".join(scopes)
+        self.client_id: int = client_id
+        self.client_secret: str = client_secret
+        self.redirect_uri: str = redirect_uri
+        self.scopes: str = "%20".join(scopes)
 
     @property
     def oauth_login_url(self) -> str:
@@ -58,7 +59,6 @@ class DiscordOAuthClient:
     @cached(ttl=550)
     async def request(self, route: str, token: str | None = None, method: str = "GET") -> JSONAny:
         headers = {"Authorization": f"Bearer {token if token else ''}"}
-        resp = None
         if method == "GET":
             async with aiohttp.ClientSession() as session:
                 resp = await session.get(f"{DISCORD_API_URL}{route}", headers=headers)

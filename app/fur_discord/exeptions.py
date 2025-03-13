@@ -13,10 +13,10 @@ class RateLimitedError(Exception):
     """A Exception raised when a Request is not Valid."""
 
     def __init__(self, json: JSONObject, headers: dict[str, str]) -> None:
-        self.json = json
-        self.headers = headers
-        self.message = json["message"]
-        self.retry_after = json["retry_after"]
+        self.json: JSONObject = json
+        self.headers: dict[str, str] = headers
+        self.message: str = json["message"]
+        self.retry_after: int = json["retry_after"]
         super().__init__(self.message)
 
 

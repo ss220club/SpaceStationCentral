@@ -37,7 +37,7 @@ class PaginatedResponse(BaseModel, Generic[T]):
 
 
 def paginate_selection(
-    session: SessionDep, selection: Select[T], request: Request, page: int, page_size: int
+    session: SessionDep, selection: Select[tuple[T, ...]], request: Request, page: int, page_size: int
 ) -> PaginatedResponse[T]:
     total: int = session.exec(select(func.count()).select_from(selection.subquery())).one()
     selection = selection.offset((page - 1) * page_size).limit(page_size)

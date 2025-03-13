@@ -88,7 +88,7 @@ def player(db_session: Session, ckey: str, discord_id: str) -> Generator[Player]
 
 
 @pytest.fixture(scope="function")
-def player_factory(db_session: Session) -> Generator[Player]:
+def player_factory(db_session: Session) -> Generator[Callable[[str | None, str | None], Player]]:
     def factory(ckey: str | None = None, discord_id: str | None = None) -> Player:
         ckey = ckey if ckey is not None else generate_ckey()
         discord_id = discord_id if discord_id is not None else generate_discord_id()
@@ -120,8 +120,8 @@ def create_whitelist(
     valid: bool,
 ) -> Whitelist:
     wl = Whitelist(
-        player_id=player.id,  # type: ignore[reportArgumentType]
-        admin_id=admin.id,  # type: ignore[reportArgumentType]
+        player_id=player.id,  # pyright: ignore[reportArgumentType]
+        admin_id=admin.id,  # pyright: ignore[reportArgumentType]
         server_type=server_type,
         expiration_time=expiration_time,
         valid=valid,
