@@ -20,4 +20,8 @@ client_id = 12345678
 endpoint_url = "http://127.0.0.1:8000/v1/oauth"
 
 [general]
+# These values are provided by pyproject.toml and can be overridden here.
+#project_name = "FurFur Central"
+#project_desc = "API для объеденения множества серверов SS13 и SS14 в одну систему."
+#project_ver = "0.1.0"
 favicon_path = "app/assets/favicon.png"

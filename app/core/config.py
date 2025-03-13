@@ -1,7 +1,7 @@
 import logging
 import tomllib
-from io import BufferedReader
 from pathlib import Path
+from typing import Any
 
 from pydantic import BaseModel, ValidationError
 
@@ -17,16 +17,16 @@ class CustomBaseModel(BaseModel):
             default_value = field_info.default
 
             if current_value == default_value:
-                logger.info("Default used for '%s'", field_name)
+                logger.debug("Default used for '%s'", field_name)
             elif isinstance(current_value, CustomBaseModel):
-                logger.info("Checking nested model: %s", field_name)
+                logger.debug("Checking nested model: %s", field_name)
                 current_value.log_defaults()
 
 
 class General(CustomBaseModel):
     project_name: str = "Space Station Central"
     project_desc: str = (
-        "API для объеденения множества серверов SS13 и SS14 в одну систему. От него несет вульпой, но он работает."
+        "API для объединения множества серверов SS13 и SS14 в одну систему. От него несет вульпой, но он работает."
     )
     project_ver: str = "0.1.0"
     favicon_path: str = "app/assets/favicon.png"
@@ -65,11 +65,9 @@ class Config(CustomBaseModel):
     oauth: OAuth = OAuth()
 
 
-def parse_config(f: BufferedReader) -> Config:
-    logger.info("Using .config.toml")
-    data = tomllib.load(f)
+def validate_config(data: dict[str, Any]) -> Config:
     config = Config.model_validate(data)
-    logger.info("Checking defaults...")
+    logger.debug("Checking defaults...")
     config.log_defaults()
     return config
 
@@ -77,9 +75,24 @@ def parse_config(f: BufferedReader) -> Config:
 def load_config() -> Config:
     try:
         with Path(".config.toml").open("rb") as f:
-            return parse_config(f)
-    except FileNotFoundError:
-        logger.info("Config file not found, using default.")
+            logger.info("Loading config data...")
+            config_data = tomllib.load(f)
+        with Path("pyproject.toml").open("rb") as f:
+            logger.info("Loading project metadata...")
+            project_metadata = tomllib.load(f)
+
+        composite_data = config_data.copy()
+
+        if "project_name" not in composite_data["general"]:
+            composite_data["general"]["project_name"] = project_metadata["project"]["name"]
+        if "project_desc" not in composite_data["general"]:
+            composite_data["general"]["project_desc"] = project_metadata["project"]["description"]
+        if "project_ver" not in composite_data["general"]:
+            composite_data["general"]["project_ver"] = project_metadata["project"]["version"]
+
+        return validate_config(composite_data)
+    except FileNotFoundError as e:
+        logger.warning("File %s was not found, using default config.", e.filename)
         return Config()
     except (tomllib.TOMLDecodeError, ValidationError) as e:
         logger.info("Invalid config file: %s", e)
