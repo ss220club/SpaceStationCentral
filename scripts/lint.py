@@ -2,10 +2,7 @@ import subprocess
 import sys
 
 
-COMMANDS = [
-    "ruff check --no-preview app tests",
-    "basedpyright app tests",
-]
+COMMANDS = ["ruff check --no-preview app tests", "basedpyright app tests", "ruff --version"]
 
 
 def run_command(cmd: str) -> int:
