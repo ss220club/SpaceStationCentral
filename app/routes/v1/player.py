@@ -134,7 +134,7 @@ async def get_or_create_player_by_discord_id(session: SessionDep, discord_id: st
     result = session.exec(select(Player).where(Player.discord_id == discord_id)).first()
 
     if result is None:
-        player = Player(discord_id=discord_id, ckey=None)
+        player = Player(discord_id=discord_id)
         session.add(player)
         session.commit()
         session.refresh(player)

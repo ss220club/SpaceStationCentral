@@ -19,7 +19,7 @@ class Player(SQLModel, table=True):
     """
     Actually is a pretty big int. Is way **too** big for a lot of software to handle
     """
-    ckey: str | None = Field(max_length=32, unique=True, index=True)
+    ckey: str | None = Field(default=None, max_length=32, unique=True, index=True)
     # wizards_id: str | None = Field(unique=True, index=True) # Most likely is some kind of uuid
 
 
