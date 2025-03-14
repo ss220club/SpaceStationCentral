@@ -1,37 +1,43 @@
-import datetime
-from typing import TYPE_CHECKING, Callable
-
-from pydantic import BaseModel
-from sqlmodel.sql.expression import SelectOfScalar
+from abc import ABCMeta, abstractmethod
+from datetime import UTC, datetime, timedelta
+from typing import override
 
 from app.database.models import Player
+from pydantic import BaseModel
 
 
-class NewWhitelistBase(BaseModel):
+class NewWhitelistBase(BaseModel, metaclass=ABCMeta):
     server_type: str
     duration_days: int
     valid: bool = True
 
-    def get_expiration_time(self) -> datetime.datetime:
-        return datetime.datetime.now() + datetime.timedelta(days=self.duration_days)
+    def get_expiration_time(self) -> datetime:
+        return datetime.now(UTC) + timedelta(days=self.duration_days)
+
+    @abstractmethod
+    def get_player_clause(self) -> bool:
+        pass
+
+    @abstractmethod
+    def get_admin_clause(self) -> bool:
+        pass
 
 
-class NewWhitelistBanBase(NewWhitelistBase):
+class NewWhitelistBanBase(NewWhitelistBase, metaclass=ABCMeta):
     reason: str | None = None
-
-
-class NewWhitelistInternal(NewWhitelistBase):
-    player_id: int
-    admin_id: int
-
-
-class NewWhitelistBanInternal(NewWhitelistInternal, NewWhitelistBanBase):
-    pass
 
 
 class NewWhitelistCkey(NewWhitelistBase):
     player_ckey: str
     admin_ckey: str
+
+    @override
+    def get_player_clause(self) -> bool:
+        return Player.ckey == self.player_ckey
+
+    @override
+    def get_admin_clause(self) -> bool:
+        return Player.ckey == self.admin_ckey
 
 
 class NewWhitelistBanCkey(NewWhitelistCkey, NewWhitelistBanBase):
@@ -42,28 +48,23 @@ class NewWhitelistDiscord(NewWhitelistBase):
     player_discord_id: str
     admin_discord_id: str
 
+    @override
+    def get_player_clause(self) -> bool:
+        return Player.discord_id == self.player_discord_id
+
+    @override
+    def get_admin_clause(self) -> bool:
+        return Player.discord_id == self.admin_discord_id
+
 
 class NewWhitelistBanDiscord(NewWhitelistDiscord, NewWhitelistBanBase):
     pass
 
 
-NEW_WHITELIST_TYPES =  NewWhitelistDiscord | NewWhitelistCkey
-NEW_WHITELIST_BAN_TYPES =  NewWhitelistBanDiscord | NewWhitelistBanCkey
-
-
-def resolve_whitelist_type(new_wl: NEW_WHITELIST_TYPES) -> tuple[Callable[[NEW_WHITELIST_TYPES], SelectOfScalar], Callable[[NEW_WHITELIST_TYPES], SelectOfScalar]]:
-    match new_wl:
-        case NewWhitelistInternal():
-            return (lambda new_wl: Player.id == new_wl.player_id, lambda new_wl: Player.id == new_wl.admin_id)
-        case NewWhitelistDiscord():
-            return (lambda new_wl: Player.discord_id == new_wl.player_discord_id, lambda new_wl: Player.discord_id == new_wl.admin_discord_id)
-        case NewWhitelistCkey():
-            return (lambda new_wl: Player.ckey == new_wl.player_ckey, lambda new_wl: Player.ckey == new_wl.admin_ckey)
-        case _:
-            raise TypeError(
-                "Someone added a new whitelist type without a case in resolve_whitelist_type")
+NewWhitelist = NewWhitelistDiscord | NewWhitelistCkey
+NewWhitelistBan = NewWhitelistBanDiscord | NewWhitelistBanCkey
 
 
 class WhitelistPatch(BaseModel):
     valid: bool | None = None
-    expiration_time: datetime.datetime | None = None
+    expiration_time: datetime | None = None
