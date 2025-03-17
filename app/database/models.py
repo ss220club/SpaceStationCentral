@@ -4,7 +4,7 @@ from secrets import token_urlsafe
 from typing import Unpack
 
 from pydantic import ConfigDict
-from sqlmodel import Field, SQLModel
+from sqlmodel import TIMESTAMP, Column, Field, SQLModel
 
 
 DEFAULT_WHITELIST_EXPIRATION_TIME = timedelta(days=30)
@@ -38,7 +38,10 @@ class CkeyLinkToken(BaseSqlModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     ckey: str = Field(max_length=32, unique=True, index=True)
     token: str = Field(max_length=64, unique=True, default_factory=lambda: token_urlsafe(DEFAULT_TOKEN_LEN), index=True)
-    expiration_time: datetime = Field(default_factory=lambda: datetime.now(UTC) + DEFAULT_TOKEN_EXPIRATION_TIME)
+    expiration_time: datetime = Field(
+        sa_column=Column(TIMESTAMP(timezone=True), nullable=False),
+        default_factory=lambda: datetime.now(UTC) + DEFAULT_TOKEN_EXPIRATION_TIME,
+    )
 
 
 class WhitelistBase(BaseSqlModel):
@@ -47,7 +50,10 @@ class WhitelistBase(BaseSqlModel):
     server_type: str = Field(max_length=32, index=True, default="default")
     admin_id: int = Field(foreign_key="player.id")
     issue_time: datetime = Field(default_factory=datetime.now)
-    expiration_time: datetime = Field(default_factory=lambda: datetime.now(UTC) + DEFAULT_WHITELIST_EXPIRATION_TIME)
+    expiration_time: datetime = Field(
+        sa_column=Column(TIMESTAMP(timezone=True), nullable=False),
+        default_factory=lambda: datetime.now(UTC) + DEFAULT_WHITELIST_EXPIRATION_TIME,
+    )
     valid: bool = Field(default=True, index=True)
 
 
@@ -56,7 +62,10 @@ class Whitelist(WhitelistBase, table=True):
 
 
 class WhitelistBan(WhitelistBase, table=True):
-    expiration_time: datetime = Field(default_factory=lambda: datetime.now(UTC) + DEFAULT_WHITELIST_BAN_EXPIRATION_TIME)
+    expiration_time: datetime = Field(
+        sa_column=Column(TIMESTAMP(timezone=True), nullable=False),
+        default_factory=lambda: datetime.now(UTC) + DEFAULT_WHITELIST_BAN_EXPIRATION_TIME,
+    )
     reason: str | None = Field(max_length=1024)
 
 
@@ -69,6 +78,11 @@ class Donation(BaseSqlModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     player_id: int = Field(foreign_key="player.id", index=True)
     tier: int = Field()
-    issue_time: datetime = Field(default_factory=datetime.now)
-    expiration_time: datetime = Field(default_factory=lambda: datetime.now(UTC) + DEFAULT_DONATION_EXPIRATION_TIME)
+    issue_time: datetime = Field(
+        sa_column=Column(TIMESTAMP(timezone=True), nullable=False), default_factory=datetime.now
+    )
+    expiration_time: datetime = Field(
+        sa_column=Column(TIMESTAMP(timezone=True), nullable=False),
+        default_factory=lambda: datetime.now(UTC) + DEFAULT_DONATION_EXPIRATION_TIME,
+    )
     valid: bool = Field(default=True)

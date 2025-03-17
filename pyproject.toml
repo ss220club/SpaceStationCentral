@@ -9,7 +9,6 @@ dependencies = [
     "aiohttp>=3.10.11",
     "alembic>=1.14.1",
     "fastapi[standard]>=0.112.0,<0.113.0",
-    "mysql>=0.0.3",
     "mysql-connector-python>=9.0.0",
     "psycopg2-binary>=2.9.10",
     "pydantic>=2.8.2,<3.0.0",
