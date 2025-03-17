@@ -67,7 +67,7 @@ loggers:
 
     uvicorn.access:
         level: INFO
-        handlers: [console, access_handler, discord_handler]
+        handlers: [console, access_handler]
         propagate: false
 
     watchfiles:
