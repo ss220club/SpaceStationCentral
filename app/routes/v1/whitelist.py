@@ -183,6 +183,7 @@ async def create_whitelist(session: SessionDep, new_wl: NewWhitelist, ignore_ban
     session.add(wl)
     session.commit()
     session.refresh(wl)
+    logging.info("Whitelist created: %s", wl.model_dump_json())
     return wl
 
 
@@ -207,6 +208,7 @@ async def update_whitelist(session: SessionDep, id: int, wl_patch: WhitelistPatc
 
     session.commit()
     session.refresh(wl)
+    logger.info("Whitelist updated: %s", wl.model_dump_json())
     return wl
 
 
@@ -334,6 +336,7 @@ async def create_whitelist_ban(
     session.add(ban)
     session.commit()
     session.refresh(ban)
+    logging.info("Whitelist ban created: %s", ban.model_dump_json())
     return ban
 
 
@@ -362,6 +365,7 @@ async def update_whitelist_ban(session: SessionDep, id: int, wl_ban_patch: White
 
     session.commit()
     session.refresh(ban)
+    logging.info("Whitelist ban updated: %s", ban.model_dump_json())
     return ban
 
 

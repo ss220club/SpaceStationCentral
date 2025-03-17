@@ -44,25 +44,30 @@ handlers:
         backupCount: 5
         encoding: utf8
 
+    discord_handler:
+        class: app.core.log_handlers.DiscordWebhookHandler
+        level: INFO
+        formatter: verbose
+
 root:
     level: NOTSET
-    handlers: [console, debug_handler, error_handler]
+    handlers: [console, debug_handler, error_handler, discord_handler]
     propagate: false
 
 loggers:
     uvicorn:
         level: DEBUG
-        handlers: [console, debug_handler]
+        handlers: [console, debug_handler, discord_handler]
         propagate: false
 
     uvicorn.error:
         level: ERROR
-        handlers: [console, error_handler]
+        handlers: [console, error_handler, discord_handler]
         propagate: false
 
     uvicorn.access:
         level: INFO
-        handlers: [console, access_handler]
+        handlers: [console, access_handler, discord_handler]
         propagate: false
 
     watchfiles:

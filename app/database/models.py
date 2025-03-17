@@ -60,7 +60,7 @@ class WhitelistBan(WhitelistBase, table=True):
     reason: str | None = Field(max_length=1024)
 
 
-class APIAuth(BaseSqlModel, table=True):
+class ApiAuth(BaseSqlModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     token_hash: str = Field(max_length=64, unique=True, index=True)
 

@@ -31,6 +31,8 @@ class General(CustomBaseModel):
     project_ver: str = "0.1.0"
     favicon_path: str = "app/assets/favicon.png"
 
+    discord_webhook: str = ""
+
 
 class Database(CustomBaseModel):
     engine: str = "postgresql+psycopg2"
