@@ -82,12 +82,8 @@ multidict==6.1.0
     # via
     #   aiohttp
     #   yarl
-mysql==0.0.3
-    # via spacestationcentral (pyproject.toml)
 mysql-connector-python==9.2.0
     # via spacestationcentral (pyproject.toml)
-mysqlclient==2.2.7
-    # via mysql
 propcache==0.3.0
     # via
     #   aiohttp
