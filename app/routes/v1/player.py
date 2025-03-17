@@ -39,7 +39,7 @@ async def get_token_by_ckey(session: Session, ckey: str) -> str:
     token_entry = session.exec(select(CkeyLinkToken).where(CkeyLinkToken.ckey == ckey)).first()
     if token_entry is None:
         token_entry = CkeyLinkToken(ckey=ckey)
-    elif token_entry.expiration_time.astimezone(UTC) < datetime.now(UTC):
+    elif token_entry.expiration_time < datetime.now(UTC):
         session.delete(token_entry)
         session.commit()
         token_entry = CkeyLinkToken(ckey=ckey)
@@ -104,7 +104,7 @@ async def callback(session: SessionDep, code: str, state: str) -> Player:
     token = session.exec(
         select(CkeyLinkToken)
         .where(CkeyLinkToken.token == token_string)
-        .where(CkeyLinkToken.expiration_time.astimezone(UTC) > datetime.now(UTC))
+        .where(CkeyLinkToken.expiration_time > datetime.now(UTC))
     ).first()
     if token is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Wrong or expired token")

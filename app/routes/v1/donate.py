@@ -31,7 +31,7 @@ def filter_donations(
     if discord_id:
         selection = selection.where(Player.discord_id == discord_id)
     if active_only:
-        selection = selection.where(Donation.valid).where(Donation.expiration_time.astimezone(UTC) > datetime.now(UTC))
+        selection = selection.where(Donation.valid).where(Donation.expiration_time > datetime.now(UTC))
     return selection
 
 
