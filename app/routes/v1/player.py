@@ -128,7 +128,7 @@ async def callback(session: SessionDep, code: str, state: str) -> Player:
     session.refresh(link)
 
     logger.info("Linked %s to %s", link.ckey, link.discord_id)
-    logger.info("New linked user %s is guilds:%s", link.discord_id, ", ".join(guild.name for guild in user_guilds))
+    logger.info("New linked user %s is guilds: %s", link.discord_id, ", ".join(guild.name for guild in user_guilds))
     await update_player_event(link)
 
     return link
