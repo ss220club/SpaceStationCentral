@@ -6,6 +6,8 @@ formatters:
         format: '%(asctime)s - %(levelname)s - %(name)s - %(process)d:%(processName)s - %(funcName)s:%(lineno)d - %(message)s'
     simple:
         format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    discord:
+        format: '%(message)s'
     uvicorn_default:
         "()": uvicorn.logging.DefaultFormatter
         format: '%(asctime)s - %(levelprefix)s %(name)s - %(message)s'
@@ -44,20 +46,25 @@ handlers:
         backupCount: 5
         encoding: utf8
 
+    discord_handler:
+        class: app.core.log_handlers.DiscordWebhookHandler
+        level: INFO
+        formatter: discord
+
 root:
     level: NOTSET
-    handlers: [console, debug_handler, error_handler]
+    handlers: [console, debug_handler, error_handler, discord_handler]
     propagate: false
 
 loggers:
     uvicorn:
         level: DEBUG
-        handlers: [console, debug_handler]
+        handlers: [console, debug_handler, discord_handler]
         propagate: false
 
     uvicorn.error:
         level: ERROR
-        handlers: [console, error_handler]
+        handlers: [console, error_handler, discord_handler]
         propagate: false
 
     uvicorn.access:

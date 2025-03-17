@@ -1,10 +1,11 @@
 import random
 import string
 from collections.abc import Callable, Generator
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 
 import pytest
-from app.database.models import APIAuth, Player, Whitelist
+from app.core.utils import utcnow2
+from app.database.models import ApiAuth, Player, Whitelist
 from app.deps import get_session, hash_bearer_token
 from app.main import app as main_app
 from fastapi import FastAPI
@@ -49,7 +50,7 @@ def bearer(db_session: Session) -> Generator[str]:
     token = str(random.randint(10000000, 99999999))
     hashed_token = hash_bearer_token(token)
 
-    auth = APIAuth(token_hash=hashed_token)
+    auth = ApiAuth(token_hash=hashed_token)
     db_session.add(auth)
     db_session.commit()
 
@@ -157,11 +158,9 @@ def whitelist_factory(db_session: Session) -> Generator[Callable[..., Whitelist]
         admin = admin if admin is not None else create_player(db_session, generate_ckey(), generate_discord_id())
         server_type = server_type if server_type is not None else generate_server_type()
         expiration_time = (
-            expiration_time
-            if expiration_time is not None
-            else datetime.now(UTC) + timedelta(days=random.randint(-777, 777))
+            expiration_time if expiration_time is not None else utcnow2() + timedelta(days=random.randint(-777, 777))
         )
-        valid = valid if valid is True else random.choice([True, False])
+        valid = valid or random.choice([True, False])
         return create_whitelist(db_session, player, admin, server_type, expiration_time, valid)
 
     yield factory

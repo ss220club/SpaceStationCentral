@@ -25,10 +25,6 @@ target_metadata = Base.metadata
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
-db_url = os.getenv("DB_URL")  # Read from environment
-if db_url is None:
-    raise ValueError("DB_URL env var is not set")
-config.set_main_option("sqlalchemy.url", db_url)
 
 
 def run_migrations_offline() -> None:
@@ -44,7 +40,7 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = config.get_main_option("sqlalchemy.url")
+    url = config.get_main_option("sqlalchemy.url") or os.getenv("DB_URL")
     context.configure(
         url=url,
         target_metadata=target_metadata,
