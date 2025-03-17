@@ -6,6 +6,8 @@ formatters:
         format: '%(asctime)s - %(levelname)s - %(name)s - %(process)d:%(processName)s - %(funcName)s:%(lineno)d - %(message)s'
     simple:
         format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    discord:
+        format: '%(message)s'
     uvicorn_default:
         "()": uvicorn.logging.DefaultFormatter
         format: '%(asctime)s - %(levelprefix)s %(name)s - %(message)s'
@@ -47,7 +49,7 @@ handlers:
     discord_handler:
         class: app.core.log_handlers.DiscordWebhookHandler
         level: INFO
-        formatter: verbose
+        formatter: discord
 
 root:
     level: NOTSET

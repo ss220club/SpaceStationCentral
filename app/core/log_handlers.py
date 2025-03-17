@@ -39,7 +39,11 @@ class DiscordWebhookHandler(logging.Handler):
         Formats the timestamp from the log record for the embed footer.
         """
         dt = datetime.fromtimestamp(record.created, UTC)
-        return dt.strftime("%Y-%m-%d %H:%M:%S UTC")
+        return (
+            f"{dt.strftime('%Y-%m-%d %H:%M:%S UTC')} "
+            f"- {record.process}:{record.processName} "
+            f"- {record.funcName}:{record.lineno}"
+        )
 
     @override
     def emit(self, record: logging.LogRecord) -> None:
