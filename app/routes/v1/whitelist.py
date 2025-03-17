@@ -44,7 +44,7 @@ def __filter_whitelists(
 
 
 def select_only_active_whitelists(selection: Select[tuple[T, ...]]) -> Select[tuple[T, ...]]:
-    return selection.where(Whitelist.valid).where(Whitelist.expiration_time > datetime.now(UTC))
+    return selection.where(Whitelist.valid).where(Whitelist.expiration_time.astimezone(UTC) > datetime.now(UTC))
 
 
 # region Get
@@ -241,7 +241,7 @@ def filter_whitelist_bans(
 
 
 def select_only_active_whitelist_bans(selection: Select[T]) -> Select[T]:
-    return selection.where(WhitelistBan.valid).where(WhitelistBan.expiration_time > datetime.now(UTC))
+    return selection.where(WhitelistBan.valid).where(WhitelistBan.expiration_time.astimezone(UTC) > datetime.now(UTC))
 
 
 # region Get
@@ -323,7 +323,7 @@ async def create_whitelist_ban(
             .values(valid=False)
             .where(eq(Whitelist.player_id, player.id))
             .where(eq(Whitelist.server_type, new_ban.server_type))
-            .where(gt(Whitelist.expiration_time, datetime.now(UTC)))
+            .where(gt(Whitelist.expiration_time.astimezone(UTC), datetime.now(UTC)))
         )
         session.execute(query)  # pyright: ignore[reportDeprecated]
 
