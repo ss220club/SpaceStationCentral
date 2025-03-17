@@ -25,7 +25,7 @@ oauth_client = DiscordOAuthClient(
     CONFIG.oauth.client_id,
     CONFIG.oauth.client_secret,
     f"{CONFIG.oauth.endpoint_url}{CALLBACK_PATH}",
-    scopes=("identify", "guilds")
+    scopes=("identify", "guilds"),
 )
 
 
@@ -93,11 +93,10 @@ async def callback(session: SessionDep, code: str, state: str) -> Player:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not get discord token")
 
     user_guilds = await oauth_client.guilds(discord_token)
-    if all(
-        guild.id != CONFIG.oauth.discord_server_id for guild in user_guilds
-    ):
+    if all(guild.id != CONFIG.oauth.discord_server_id for guild in user_guilds):
         raise HTTPException(
-            status_code=status.HTTP_412_PRECONDITION_FAILED, detail=f"User not in server. Please join the server and try again. {CONFIG.oauth.discord_server_invite}"
+            status_code=status.HTTP_412_PRECONDITION_FAILED,
+            detail=f"User not in server. Please join the server and try again. {CONFIG.oauth.discord_server_invite}",
         )
 
     token_string = state
@@ -130,7 +129,6 @@ async def callback(session: SessionDep, code: str, state: str) -> Player:
 
     logger.info("Linked %s to %s", link.ckey, link.discord_id)
     logger.info("New linked user %s is guilds:%s", link.discord_id, ", ".join(guild.name for guild in user_guilds))
-    
     await update_player_event(link)
 
     return link
