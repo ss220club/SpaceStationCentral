@@ -97,6 +97,7 @@ async def callback(session: SessionDep, code: str, state: str) -> Player:
         raise HTTPException(
             status_code=status.HTTP_412_PRECONDITION_FAILED,
             detail=f"User not in server. Please join the server and try again. {CONFIG.oauth.discord_server_invite}",
+            headers={"Location": CONFIG.oauth.discord_server_invite},
         )
 
     token_string = state
