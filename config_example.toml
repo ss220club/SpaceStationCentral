@@ -19,6 +19,9 @@ client_secret = "12345678"
 client_id = 12345678
 endpoint_url = "http://127.0.0.1:8000/v1/oauth"
 
+discord_server_id = "12345678"
+discord_server_invite = "https://discord.com/invite/12345678"
+
 [general]
 #project_name = "FurFur Central"
 #project_desc = "API для объеденения множества серверов SS13 и SS14 в одну систему."

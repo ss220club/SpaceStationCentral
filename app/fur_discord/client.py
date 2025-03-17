@@ -58,7 +58,7 @@ class DiscordOAuthClient:
     @cached(ttl=550)
     async def request(self, route, token=None, method='GET'):
         headers = {
-            "Authorization": f'Bearer {token if token else ""}'
+            "Authorization": f'Bearer {token or ""}'
         }
         resp = None
         if method == 'GET':
@@ -103,11 +103,10 @@ class DiscordOAuthClient:
                 resp_json: dict = await resp.json()
                 return resp_json.get('access_token'), resp_json.get('refresh_token')
 
-    async def user(self, request: Request):
+    async def user(self, token: str):
         if "identify" not in self.scopes:
             raise ScopeMissing("identify")
         route = '/users/@me'
-        token = self.get_token(request)
         return User(**(await self.request(route, token)))
 
     async def get_user(self, token: str):
@@ -115,12 +114,11 @@ class DiscordOAuthClient:
         response = await self.request(route, token)
         return User.model_validate(response)
 
-    async def guilds(self, request: Request) -> List[GuildPreview]:
+    async def guilds(self, token: str) -> List[GuildPreview]:
         if "guilds" not in self.scopes:
             raise ScopeMissing("guilds")
         route = '/users/@me/guilds'
-        token = self.get_token(request)
-        return [Guild(**guild) for guild in await self.request(route, token)]
+        return [GuildPreview(**guild) for guild in await self.request(route, token)]
 
     def get_token(self, request: Request):
         authorization_header = request.headers.get("Authorization")

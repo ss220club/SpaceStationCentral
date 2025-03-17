@@ -55,6 +55,9 @@ class OAuth(CustomBaseModel):
     client_id: int = 12345678
     endpoint_url: str = "http://127.0.0.1:8000/v1"
 
+    discord_server_id: str = "12345678"
+    discord_server_invite: str = "https://discord.com/invite/12345678"
+
 
 class Config(CustomBaseModel):
     general: General = General()

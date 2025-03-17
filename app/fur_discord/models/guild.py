@@ -1,5 +1,3 @@
-from typing import List, Optional
-
 from pydantic import BaseModel
 
 from .role import Role
@@ -8,14 +6,15 @@ from .role import Role
 class GuildPreview(BaseModel):
     id: str | None = None
     name: str
-    icon: Optional[str]
+    icon: str | None
+    banner: str | None
     owner: bool
     permissions: int
-    features: List[str]
+    features: list[str]
 
 
 class Guild(GuildPreview):
-    owner_id: Optional[int]
-    verification_level: Optional[int]
-    default_message_notifications: Optional[int]
-    roles: Optional[List[Role]]
+    owner_id: int | None
+    verification_level: int | None
+    default_message_notifications: int | None
+    roles: list[Role] | None
