@@ -1,5 +1,4 @@
 import logging
-from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import RedirectResponse
@@ -7,6 +6,7 @@ from sqlmodel import Session, func, select
 
 from app.core import redis
 from app.core.config import CONFIG
+from app.core.utils import utcnow2
 from app.database.models import CkeyLinkToken, Player
 from app.deps import AUTH_RESPONSES, SessionDep, verify_bearer
 from app.fur_discord import DiscordOAuthClient
@@ -39,7 +39,7 @@ async def get_token_by_ckey(session: Session, ckey: str) -> str:
     token_entry = session.exec(select(CkeyLinkToken).where(CkeyLinkToken.ckey == ckey)).first()
     if token_entry is None:
         token_entry = CkeyLinkToken(ckey=ckey)
-    elif token_entry.expiration_time < datetime.now(UTC):
+    elif token_entry.expiration_time < utcnow2():
         session.delete(token_entry)
         session.commit()
         token_entry = CkeyLinkToken(ckey=ckey)
@@ -104,7 +104,7 @@ async def callback(session: SessionDep, code: str, state: str) -> Player:
     token = session.exec(
         select(CkeyLinkToken)
         .where(CkeyLinkToken.token == token_string)
-        .where(CkeyLinkToken.expiration_time > datetime.now(UTC))
+        .where(CkeyLinkToken.expiration_time > utcnow2())
     ).first()
     if token is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Wrong or expired token")

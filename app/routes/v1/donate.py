@@ -1,11 +1,12 @@
 import logging
-from datetime import UTC, datetime, timedelta
+from datetime import timedelta
 from typing import TypeVar, cast
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlmodel import select
 from sqlmodel.sql.expression import Select
 
+from app.core.utils import utcnow2
 from app.database.models import Donation, Player
 from app.deps import SessionDep, verify_bearer
 from app.routes.v1.player import get_or_create_player_by_discord_id
@@ -31,7 +32,7 @@ def filter_donations(
     if discord_id:
         selection = selection.where(Player.discord_id == discord_id)
     if active_only:
-        selection = selection.where(Donation.valid).where(Donation.expiration_time > datetime.now(UTC))
+        selection = selection.where(Donation.valid).where(Donation.expiration_time > utcnow2())
     return selection
 
 
@@ -82,8 +83,8 @@ async def create_donation_by_discord(session: SessionDep, new_donation: NewDonat
     donation = Donation(
         player_id=player.id,  # pyright: ignore[reportArgumentType]
         tier=new_donation.tier,
-        issue_time=datetime.now(UTC),
-        expiration_time=datetime.now(UTC) + timedelta(days=new_donation.duration_days),
+        issue_time=utcnow2(),
+        expiration_time=utcnow2() + timedelta(days=new_donation.duration_days),
         valid=True,
     )
 

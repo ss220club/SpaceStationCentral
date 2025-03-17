@@ -1,7 +1,8 @@
 from abc import ABCMeta, abstractmethod
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 from typing import override
 
+from app.core.utils import utcnow2
 from app.database.models import Player
 from pydantic import BaseModel
 
@@ -12,7 +13,7 @@ class NewWhitelistBase(BaseModel, metaclass=ABCMeta):
     valid: bool = True
 
     def get_expiration_time(self) -> datetime:
-        return datetime.now(UTC) + timedelta(days=self.duration_days)
+        return utcnow2() + timedelta(days=self.duration_days)
 
     @abstractmethod
     def get_player_clause(self) -> bool:

@@ -1,9 +1,10 @@
 import random
 import string
 from collections.abc import Callable, Generator
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 
 import pytest
+from app.core.utils import utcnow2
 from app.database.models import ApiAuth, Player, Whitelist
 from app.deps import get_session, hash_bearer_token
 from app.main import app as main_app
@@ -157,9 +158,7 @@ def whitelist_factory(db_session: Session) -> Generator[Callable[..., Whitelist]
         admin = admin if admin is not None else create_player(db_session, generate_ckey(), generate_discord_id())
         server_type = server_type if server_type is not None else generate_server_type()
         expiration_time = (
-            expiration_time
-            if expiration_time is not None
-            else datetime.now(UTC) + timedelta(days=random.randint(-777, 777))
+            expiration_time if expiration_time is not None else utcnow2() + timedelta(days=random.randint(-777, 777))
         )
         valid = valid or random.choice([True, False])
         return create_whitelist(db_session, player, admin, server_type, expiration_time, valid)

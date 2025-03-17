@@ -1,5 +1,4 @@
 import logging
-from datetime import UTC, datetime
 from operator import eq, gt, ne
 from typing import TypeVar, cast
 
@@ -7,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlmodel import func, select, update
 from sqlmodel.sql.expression import Select
 
+from app.core.utils import utcnow2
 from app.database.models import Player, Whitelist, WhitelistBan
 from app.deps import AUTH_RESPONSES, SessionDep, verify_bearer
 from app.routes.v1.player import get_player_by_discord_id
@@ -44,7 +44,7 @@ def __filter_whitelists(
 
 
 def select_only_active_whitelists(selection: Select[tuple[T, ...]]) -> Select[tuple[T, ...]]:
-    return selection.where(Whitelist.valid).where(Whitelist.expiration_time > datetime.now(UTC))
+    return selection.where(Whitelist.valid).where(Whitelist.expiration_time > utcnow2())
 
 
 # region Get
@@ -241,7 +241,7 @@ def filter_whitelist_bans(
 
 
 def select_only_active_whitelist_bans(selection: Select[T]) -> Select[T]:
-    return selection.where(WhitelistBan.valid).where(WhitelistBan.expiration_time > datetime.now(UTC))
+    return selection.where(WhitelistBan.valid).where(WhitelistBan.expiration_time > utcnow2())
 
 
 # region Get
@@ -323,7 +323,7 @@ async def create_whitelist_ban(
             .values(valid=False)
             .where(eq(Whitelist.player_id, player.id))
             .where(eq(Whitelist.server_type, new_ban.server_type))
-            .where(gt(Whitelist.expiration_time, datetime.now(UTC)))
+            .where(gt(Whitelist.expiration_time, utcnow2()))
         )
         session.execute(query)  # pyright: ignore[reportDeprecated]
 
