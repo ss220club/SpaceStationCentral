@@ -58,7 +58,7 @@ class DiscordOAuthClient:
 
     @cached(ttl=550)
     async def request(self, route: str, token: str | None = None, method: str = "GET") -> JSONAny:
-        headers = {"Authorization": f"Bearer {token if token else ''}"}
+        headers = {"Authorization": f"Bearer {token or ''}"}
         if method == "GET":
             async with aiohttp.ClientSession() as session:
                 resp = await session.get(f"{DISCORD_API_URL}{route}", headers=headers)
@@ -99,11 +99,10 @@ class DiscordOAuthClient:
             resp_json: dict[str, Any] = await resp.json()
             return resp_json.get("access_token"), resp_json.get("refresh_token")
 
-    async def user(self, request: Request) -> User:
+    async def user(self, token: str) -> User:
         if "identify" not in self.scopes:
             raise ScopeMissingError("identify")
         route = "/users/@me"
-        token = self.get_token(request)
         return User.model_validate(await self.request(route, token))
 
     async def get_user(self, token: str) -> User:
@@ -111,12 +110,11 @@ class DiscordOAuthClient:
         response: Any = await self.request(route, token)
         return User.model_validate(response)
 
-    async def guilds(self, request: Request) -> list[GuildPreview]:
+    async def guilds(self, token: str) -> list[GuildPreview]:
         if "guilds" not in self.scopes:
             raise ScopeMissingError("guilds")
 
         route = "/users/@me/guilds"
-        token = self.get_token(request)
         response: Any = await self.request(route, token)
         if not isinstance(response, list):
             raise ValueError("Invalid response from Discord API")
@@ -129,11 +127,9 @@ class DiscordOAuthClient:
         if not authorization_header:
             raise UnauthorizedError
 
-        match = re.compile(r"^Bearer (?P<token>\S+)$").match(authorization_header)
-        if not match:
-            raise UnauthorizedError
-
-        return match["token"]
+        if match := re.compile(r"^Bearer (?P<token>\S+)$").match(authorization_header):
+            return match["token"]
+        raise UnauthorizedError
 
     async def is_auntheficated(self, token: str) -> bool:
         route = "/oauth2/@me"

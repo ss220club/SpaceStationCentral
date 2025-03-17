@@ -7,6 +7,7 @@ class GuildPreview(BaseModel):
     id: str | None = None
     name: str
     icon: str | None
+    banner: str | None
     owner: bool
     permissions: int
     features: list[str]
