@@ -93,6 +93,7 @@ async def callback(session: SessionDep, code: str, state: str) -> Player:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not get discord token")
 
     user_guilds = await oauth_client.guilds(discord_token)
+    # logger.info("User guilds: %s", user_guilds)
     if all(guild.id != CONFIG.oauth.discord_server_id for guild in user_guilds):
         raise HTTPException(
             status_code=status.HTTP_412_PRECONDITION_FAILED,
@@ -118,7 +119,7 @@ async def callback(session: SessionDep, code: str, state: str) -> Player:
         if link.ckey is not None:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Player already linked")
 
-        logger.debug("Linking a preexisting player %s to %s", link.discord_id, ckey)
+        logger.debug("Linking a preexisting player %s to ckey %s", link.discord_id, ckey)
         link.ckey = ckey
     else:
         link = Player(ckey=ckey, discord_id=discord_id)
@@ -128,8 +129,8 @@ async def callback(session: SessionDep, code: str, state: str) -> Player:
     session.commit()
     session.refresh(link)
 
-    logger.info("Linked %s to %s", link.ckey, link.discord_id)
-    logger.info("New linked user %s is guilds: %s", link.discord_id, ", ".join(guild.name for guild in user_guilds))
+    logger.info("Linked ckey %s to %s", link.ckey, link.discord_id)
+    logger.info("New linked user %s guilds: %s", link.discord_id, ", ".join(guild.name for guild in user_guilds))
     await update_player_event(link)
 
     return link
