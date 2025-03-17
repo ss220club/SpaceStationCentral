@@ -1,5 +1,5 @@
 [database]
-engine = "mariadb"
+engine = "mariadb+mysqlconnector"
 name = "central"
 user = "central"
 password = "central"
@@ -23,6 +23,7 @@ discord_server_id = "12345678"
 discord_server_invite = "https://discord.com/invite/12345678"
 
 [general]
+# These values are provided by pyproject.toml and can be overridden here.
 #project_name = "FurFur Central"
 #project_desc = "API для объеденения множества серверов SS13 и SS14 в одну систему."
 #project_ver = "0.1.0"

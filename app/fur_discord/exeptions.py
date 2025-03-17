@@ -1,25 +1,28 @@
-class Unauthorized(Exception):
+from app.core.typing import JSONObject
+
+
+class UnauthorizedError(Exception):
     """A Exception raised when user is not authorized."""
 
 
-class InvalidRequest(Exception):
-    """A Exception raised when a Request is not Valid"""
+class InvalidRequestError(Exception):
+    """A Exception raised when a Request is not Valid."""
 
 
-class RateLimited(Exception):
-    """A Exception raised when a Request is not Valid"""
+class RateLimitedError(Exception):
+    """A Exception raised when a Request is not Valid."""
 
-    def __init__(self, json, headers):
-        self.json = json
-        self.headers = headers
-        self.message = json['message']
-        self.retry_after = json["retry_after"]
+    def __init__(self, json: JSONObject, headers: dict[str, str]) -> None:
+        self.json: JSONObject = json
+        self.headers: dict[str, str] = headers
+        self.message: str = json["message"]
+        self.retry_after: int = json["retry_after"]
         super().__init__(self.message)
 
 
-class ScopeMissing(Exception):
+class ScopeMissingError(Exception):
     scope: str
 
-    def __init__(self, scope: str):
+    def __init__(self, scope: str) -> None:
         self.scope = scope
         super().__init__(self.scope)

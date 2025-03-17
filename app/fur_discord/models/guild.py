@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-from .role import Role
+from app.fur_discord.models.role import Role
 
 
 class GuildPreview(BaseModel):
