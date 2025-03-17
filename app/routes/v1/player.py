@@ -93,7 +93,6 @@ async def callback(session: SessionDep, code: str, state: str) -> Player:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not get discord token")
 
     user_guilds = await oauth_client.guilds(discord_token)
-    # logger.info("User guilds: %s", user_guilds)
     if all(guild.id != CONFIG.oauth.discord_server_id for guild in user_guilds):
         raise HTTPException(
             status_code=status.HTTP_412_PRECONDITION_FAILED,
