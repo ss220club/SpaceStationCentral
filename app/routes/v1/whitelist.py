@@ -69,7 +69,7 @@ async def get_whitelists(
     page: int = 1,
     page_size: int = 50,
 ) -> PaginatedResponse[Whitelist]:
-    selection = cast(Select[tuple[Whitelist]], select(Whitelist).join(Player))  # pyright: ignore[reportInvalidCast]
+    selection = cast(Select[tuple[Whitelist]], select(Whitelist).join(Player, eq(Player.id, Whitelist.player_id)))  # pyright: ignore[reportInvalidCast]
     admin = await get_player_by_discord_id(session, admin_discord_id) if admin_discord_id is not None else None
     selection = __filter_whitelists(selection, ckey, discord_id, admin and admin.id, server_type, active_only)
 
@@ -91,7 +91,10 @@ async def get_whitelisted_ckeys(
     page: int = 1,
     page_size: int = 50,
 ) -> PaginatedResponse[str]:
-    selection = cast(Select[tuple[str]], select(Player.ckey).join(Whitelist).where(ne(Player.ckey, None)).distinct())  # pyright: ignore[reportInvalidCast]
+    selection = cast(
+        Select[tuple[str]],
+        select(Player.ckey).join(Whitelist, eq(Player.id, Whitelist.player_id)).where(ne(Player.ckey, None)).distinct(),
+    )  # pyright: ignore[reportInvalidCast]
     selection = __filter_whitelists(selection, server_type=server_type, active_only=active_only)
 
     return paginate_selection(session, selection, request, page, page_size)
@@ -112,7 +115,9 @@ async def get_whitelisted_discord_ids(
     page: int = 1,
     page_size: int = 50,
 ) -> PaginatedResponse[str]:
-    selection = cast(Select[tuple[str]], select(Player.discord_id).join(Whitelist).distinct())  # pyright: ignore[reportInvalidCast]
+    selection = cast(
+        Select[tuple[str]], select(Player.discord_id).join(Whitelist, eq(Player.id, Whitelist.player_id)).distinct()
+    )  # pyright: ignore[reportInvalidCast]
     selection = __filter_whitelists(selection, server_type=server_type, active_only=active_only)
 
     return paginate_selection(session, selection, request, page, page_size)
@@ -259,7 +264,9 @@ async def get_whitelist_bans(
     page: int = 1,
     page_size: int = 50,
 ) -> PaginatedResponse[WhitelistBan]:
-    selection = cast(Select[tuple[WhitelistBan]], select(WhitelistBan).join(Player))  # pyright: ignore[reportInvalidCast]
+    selection = cast(
+        Select[tuple[WhitelistBan]], select(WhitelistBan).join(Player, eq(Player.id, WhitelistBan.player_id))
+    )  # pyright: ignore[reportInvalidCast]
 
     admin = await get_player_by_discord_id(session, admin_discord_id) if admin_discord_id is not None else None
 
