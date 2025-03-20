@@ -253,6 +253,7 @@ async def update_player(session: SessionDep, id: int, player_patch: PlayerPatch)
     try:
         session.commit()
     except IntegrityError as e:
+        logger.warning("Update failed. Patch: %s. Error: %s", player_patch, e)
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Update violates database constraints",
