@@ -252,15 +252,15 @@ async def update_player(session: SessionDep, id: int, player_patch: PlayerPatch)
         setattr(player, key, value)
     try:
         session.commit()
-        session.refresh(player)
-        logger.info("Player updated: %s", player.model_dump_json())
-        await update_player_event(player)
-        return player
     except IntegrityError as e:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Update violates database constraints",
         ) from e
+    session.refresh(player)
+    logger.info("Player updated: %s", player.model_dump_json())
+    await update_player_event(player)
+    return player
 
 
 # endregion
