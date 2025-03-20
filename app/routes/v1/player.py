@@ -2,6 +2,7 @@ import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import RedirectResponse
+from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, func, select
 
 from app.core import redis
@@ -249,12 +250,17 @@ async def update_player(session: SessionDep, id: int, player_patch: PlayerPatch)
 
     for key, value in update_data.items():
         setattr(player, key, value)
-
-    session.commit()
-    session.refresh(player)
-    logger.info("Player updated: %s", player.model_dump_json())
-    await update_player_event(player)
-    return player
+    try:
+        session.commit()
+        session.refresh(player)
+        logger.info("Player updated: %s", player.model_dump_json())
+        await update_player_event(player)
+        return player
+    except IntegrityError as e:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Update violates database constraints",
+        ) from e
 
 
 # endregion
