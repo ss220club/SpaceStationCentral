@@ -17,7 +17,7 @@ from app.schemas.player import NewPlayer, PlayerPatch
 
 logger = logging.getLogger(__name__)
 
-# region # OAuth
+# region OAuth
 
 oauth_router = APIRouter(prefix="/oauth", tags=["OAuth"])
 
@@ -137,7 +137,7 @@ async def callback(session: SessionDep, code: str, state: str) -> Player:
 
 
 # endregion
-# region # Players
+# region Players
 
 player_router = APIRouter(prefix="/players", tags=["Player"])
 
