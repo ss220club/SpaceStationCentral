@@ -15,22 +15,20 @@ from app.fur_discord.models import GuildPreview, User
 
 
 class DiscordOAuthClient:
-    """
-    Client for Discord Oauth2.
-
-    Parameters
-    ----------
-    client_id:
-        Discord application client ID.
-    client_secret:
-        Discord application client secret.
-    redirect_uri:
-        Discord application redirect URI.
-    """
+    """Client for Discord Oauth2."""
 
     def __init__(
         self, client_id: int, client_secret: str, redirect_uri: str, scopes: tuple[str, ...] = ("identify",)
     ) -> None:
+        """
+        Initialize the Discord OAuth client.
+
+        Args:
+            client_id: Discord application client ID.
+            client_secret: Discord application client secret.
+            redirect_uri: Discord application redirect URI.
+            scopes: Discord application scopes.
+        """
         self.client_id: int = client_id
         self.client_secret: str = client_secret
         self.redirect_uri: str = redirect_uri

@@ -9,6 +9,7 @@ pool_size = 10
 overflow = 5
 pool_recycle = 3600
 pool_pre_ping = true
+echo = false
 
 [redis]
 connection_string = "redis://default:user@hostname:6379"

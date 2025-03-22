@@ -5,8 +5,8 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, func, select
 
-from app.core import redis
-from app.core.config import CONFIG
+from app.core.config import get_config
+from app.core.redis import default_client
 from app.core.utils import utcnow2
 from app.database.models import CkeyLinkToken, Player
 from app.deps import AUTH_RESPONSES, SessionDep, verify_bearer
@@ -23,9 +23,9 @@ oauth_router = APIRouter(prefix="/oauth", tags=["OAuth"])
 
 CALLBACK_PATH = "/discord_oa"
 oauth_client = DiscordOAuthClient(
-    CONFIG.oauth.client_id,
-    CONFIG.oauth.client_secret,
-    f"{CONFIG.oauth.endpoint_url}{CALLBACK_PATH}",
+    get_config().oauth.client_id,
+    get_config().oauth.client_secret,
+    f"{get_config().oauth.endpoint_url}{CALLBACK_PATH}",
     scopes=("identify", "guilds"),
 )
 
@@ -94,11 +94,12 @@ async def callback(session: SessionDep, code: str, state: str) -> Player:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not get discord token")
 
     user_guilds = await oauth_client.guilds(discord_token)
-    if all(guild.id != CONFIG.oauth.discord_server_id for guild in user_guilds):
+    config = get_config()
+    if all(guild.id != config.oauth.discord_server_id for guild in user_guilds):
         raise HTTPException(
             status_code=status.HTTP_412_PRECONDITION_FAILED,
-            detail=f"User not in server. Please join the server and try again. {CONFIG.oauth.discord_server_invite}",
-            headers={"Location": CONFIG.oauth.discord_server_invite},
+            detail=f"User not in server. Please join the server and try again. {config.oauth.discord_server_invite}",
+            headers={"Location": config.oauth.discord_server_invite},
         )
 
     token_string = state
@@ -270,7 +271,7 @@ async def update_player(session: SessionDep, id: int, player_patch: PlayerPatch)
 
 
 async def update_player_event(player: Player) -> None:
-    await redis.send_message("link", player.model_dump_json())
+    await default_client().publish("link", player.model_dump_json())
 
 
 # endregion

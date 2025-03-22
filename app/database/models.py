@@ -18,9 +18,8 @@ DEFAULT_TOKEN_EXPIRATION_TIME = timedelta(minutes=5)
 
 
 class BaseSqlModel(SQLModel):
-    """Base SQL model that automatically sets the table name to the class name in snake_case."""
-
     def __init_subclass__(cls, **kwargs: Unpack[ConfigDict]) -> None:
+        """Automatically set the table name to the class name in snake_case."""
         super().__init_subclass__(**kwargs)
         table_name = re.sub(r"(?<!^)(?=[A-Z])", "_", cls.__name__).lower()
         cls.__tablename__: str = table_name  # pyright: ignore[reportIncompatibleVariableOverride]
