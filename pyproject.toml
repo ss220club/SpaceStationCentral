@@ -13,6 +13,7 @@ dependencies = [
     "mysql-connector-python>=9.0.0",
     "psycopg2-binary>=2.9.10",
     "pydantic>=2.8.2,<3.0.0",
+    "pydantic-settings>=2.8.1",
     "redis>=5.2.1",
     "sqlalchemy>=2.0.33,<3.0.0",
     "sqlmodel>=0.0.24",
@@ -125,6 +126,7 @@ ignore = [
     "D102",    # Missing docstring in public method
     "D103",    # Missing docstring in public function
     "D104",    # Missing docstring in public package
+    "D105",    # Missing docstring in magic method
     "D107",    # Missing docstring in `__init__`
     "D212",    # Multi-line summary first line
     "D401",    # First line of docstring should be in imperative mood
@@ -144,7 +146,8 @@ ban-relative-imports = "all"
 convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
-"app/tests/**/*.py" = ["S101", "TID252", "PLR2004"]
+"!app/**.py" = ["D"]
+"tests/**/*.py" = ["S101", "TID252", "PLR2004"]
 
 [tool.basedpyright]
 typeCheckingMode = "recommended"

@@ -1,18 +1,49 @@
 import logging
-import os
-import tomllib
-from collections.abc import Callable
 from functools import lru_cache
-from typing import Any, BinaryIO, Self, override
+from pathlib import Path
+from typing import ClassVar, override
 
-from pydantic import BaseModel, Field, ValidationError, field_validator
+from pydantic import BaseModel, Field, field_validator
+from pydantic_settings import (
+    BaseSettings,
+    PydanticBaseSettingsSource,
+    PyprojectTomlConfigSettingsSource,
+    SettingsConfigDict,
+    TomlConfigSettingsSource,
+)
+from pydantic_settings.sources import PathType
 
 
 logger = logging.getLogger(__name__)
 
 
-class ConfigSection(BaseModel):
+class ExtendedSettingsConfigDict(SettingsConfigDict, total=False):
+    toml_file_section: str | None
+    """Section of the TOML file to use when filling variables."""
+
+
+class ConfigSection(BaseSettings):
     """Base class for all configuration sections."""
+
+    GENERAL_PREFIX: ClassVar[str] = "SSC_"
+    CONFIG_FILE: ClassVar[str] = ".config.toml"
+
+    @override
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
+        return (
+            init_settings,
+            env_settings,
+            SectionedTomlConfigSettingsSource(cls, toml_file=cls.CONFIG_FILE),
+            file_secret_settings,
+        )
 
     def log_defaults(self) -> None:
         """Log fields that use their default values."""
@@ -26,216 +57,106 @@ class ConfigSection(BaseModel):
                 logger.debug("Checking nested model: %s", field_name)
                 current_value.log_defaults()
 
-    @classmethod
-    def env_prefix(cls) -> str:
-        return ""
 
-    @classmethod
-    def from_env(cls, **kwargs: Any) -> Self:  # noqa: ANN401
-        """
-        Create an instance with values from environment variables.
-
-        For a field named 'example_field' in a section with _env_prefix = 'APP_',
-        it will look for an environment variable APP_EXAMPLE_FIELD.
-        """
-        data: dict[str, Any] = {}
-
-        for field_name in cls.model_fields:
-            env_var_name = f"{cls.env_prefix()}{field_name.upper()}"
-            env_value = os.environ.get(env_var_name)
-
-            if env_value is not None:
-                data[field_name] = env_value
-
-        # Override with explicit kwargs
-        data.update(kwargs)
-
-        return cls.model_validate(data)
-
-
-class General(ConfigSection):
+class GeneralConfig(ConfigSection):
     """General application configuration."""
 
-    project_name: str = "Space Station Central"
-    project_desc: str = (
-        "API для объединения множества серверов SS13 и SS14 в одну систему. От него несет вульпой, но он работает."
+    model_config = ExtendedSettingsConfigDict(
+        env_prefix=f"{ConfigSection.GENERAL_PREFIX}APP_",
+        toml_file_section="general",
+        pyproject_toml_table_header=("project",),
+        extra="ignore",
     )
-    project_ver: str = "0.1.0"
-    favicon_path: str = "app/assets/favicon.png"
-    discord_webhook: str = ""
+
+    name: str = Field(default="Space Station Central")
+    version: str = Field(default="0.1.0")
+    description: str = Field(default="API для объединения множества серверов SS13 и SS14 в одну систему.")
+    favicon_path: str = Field(default="app/assets/favicon.png")
+    discord_webhook: str | None = Field(default=None)
 
     @override
     @classmethod
-    def env_prefix(cls) -> str:
-        return "APP_"
+    def settings_customise_sources(
+        cls,
+        settings_cls: type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
+        return (
+            init_settings,
+            env_settings,
+            SectionedTomlConfigSettingsSource(cls, toml_file=cls.CONFIG_FILE),
+            PyprojectTomlConfigSettingsSource(settings_cls),
+            file_secret_settings,
+        )
 
     @field_validator("discord_webhook")
     @classmethod
     def validate_webhook(cls, value: str) -> str:
         if value and not value.startswith(("http://", "https://")):
-            logger.warning("Discord webhook URL should start with http:// or https://")
+            raise ValueError("Discord webhook URL should start with http:// or https://")
         return value
 
 
-class Database(ConfigSection):
+class DatabaseConfig(ConfigSection):
     """Database connection configuration."""
 
-    engine: str = "postgresql+psycopg2"
-    name: str = "central"
-    user: str = "root"
-    password: str = "root"
-    host: str = "127.0.0.1"
-    port: int = 5432
-    pool_size: int = 10
-    overflow: int = 5
-    pool_recycle: int = 3600
-    pool_pre_ping: bool = True
-    echo: bool = False
+    model_config = ExtendedSettingsConfigDict(
+        env_prefix=f"{ConfigSection.GENERAL_PREFIX}DB_", toml_file_section="database", extra="ignore"
+    )
 
-    @override
-    @classmethod
-    def env_prefix(cls) -> str:
-        return "DB_"
+    engine: str = Field(default="postgresql+psycopg2")
+    name: str = Field(default="central")
+    user: str = Field(default="root")
+    password: str = Field(default="root")
+    host: str = Field(default="127.0.0.1")
+    port: int = Field(default=5432)
+    pool_size: int = Field(default=10)
+    overflow: int = Field(default=5)
+    pool_recycle: int = Field(default=3600)
+    pool_pre_ping: bool = Field(default=True)
+    echo: bool = Field(default=False)
 
     def get_connection_string(self) -> str:
         """Generate a SQLAlchemy connection string from the config."""
         return f"{self.engine}://{self.user}:{self.password}@{self.host}:{self.port}/{self.name}"
 
 
-class Redis(ConfigSection):
+class RedisConfig(ConfigSection):
     """Redis connection configuration."""
 
-    connection_string: str = "redis://127.0.0.1:6379/0"
-    channel: str = "central"
+    model_config = ExtendedSettingsConfigDict(
+        env_prefix=f"{ConfigSection.GENERAL_PREFIX}REDIS_", toml_file_section="redis", extra="ignore"
+    )
 
-    @override
-    @classmethod
-    def env_prefix(cls) -> str:
-        return "REDIS_"
+    connection_string: str = Field(default="redis://127.0.0.1:6379/0")
+    channel: str = Field(default="central")
 
 
-class OAuth(ConfigSection):
+class OAuthConfig(ConfigSection):
     """OAuth configuration for authentication."""
 
+    model_config = ExtendedSettingsConfigDict(
+        env_prefix=f"{ConfigSection.GENERAL_PREFIX}OAUTH_", toml_file_section="oauth", extra="ignore"
+    )
+
     # From discord app's settings
-    client_secret: str = "12345678"
-    client_id: int = 12345678
-    endpoint_url: str = "http://127.0.0.1:8000/v1"
-    discord_server_id: str = "12345678"
-    discord_server_invite: str = "https://discord.com/invite/12345678"
-
-    @override
-    @classmethod
-    def env_prefix(cls) -> str:
-        return "OAUTH_"
+    client_secret: str = Field(default="12345678")
+    client_id: int = Field(default=12345678)
+    endpoint_url: str = Field(default="http://127.0.0.1:8000/v1")
+    discord_server_id: str = Field(default="12345678")
+    discord_server_invite: str = Field(default="https://discord.com/invite/12345678")
 
 
-class AppConfig(ConfigSection):
+class AppConfig(BaseModel):
     """Application configuration root."""
 
-    general: General = Field(default_factory=General)
-    database: Database = Field(default_factory=Database)
-    redis: Redis = Field(default_factory=Redis)
-    oauth: OAuth = Field(default_factory=OAuth)
-
-    @override
-    @classmethod
-    def env_prefix(cls) -> str:
-        return super().env_prefix()
-
-
-class ConfigLoader:
-    """
-    Configuration loader that handles different sources with precedence.
-
-    1. Environment variables (highest priority)
-    2. Config file (.config.toml)
-    3. Project metadata (pyproject.toml)
-    4. Default values (lowest priority)
-    """
-
-    def __init__(
-        self,
-        config_stream_provider: Callable[[], BinaryIO] | None = None,
-        project_stream_provider: Callable[[], BinaryIO] | None = None,
-        env_prefix: str = "",
-    ) -> None:
-        """
-        Initialize the configuration loader.
-
-        Args:
-            config_stream_provider : Callable that returns a stream to the config file.
-            project_stream_provider : Callable that returns a stream to the project metadata file.
-            env_prefix : Prefix for environment variables (default: "")
-        """
-        self.config_stream_provider = config_stream_provider
-        self.project_stream_provider = project_stream_provider
-        self.env_prefix = env_prefix
-
-    def _load_toml_file(self, toml_stream: BinaryIO) -> dict[str, Any]:
-        """Load and parse a TOML file."""
-        try:
-            with toml_stream:
-                logger.debug("Loading data from a stream...")
-                return tomllib.load(toml_stream)
-        except tomllib.TOMLDecodeError as e:
-            logger.error(f"Error parsing a stream: {e}")
-            return {}
-
-    def load(self) -> AppConfig:
-        """
-        Load configuration from all sources with proper precedence.
-
-        Returns:
-            AppConfig
-                The validated configuration object
-
-        Raises:
-            ValidationError
-                If the configuration is invalid
-
-        """
-        # Load from streams if available
-        config_data: dict[str, Any] = (
-            self._load_toml_file(self.config_stream_provider()) if self.config_stream_provider else {}
-        )
-        project_data: dict[str, Any] = (
-            self._load_toml_file(self.project_stream_provider()) if self.project_stream_provider else {}
-        )
-
-        # Merge project metadata if available
-        if "project" in project_data and "general" in config_data:
-            project_meta = project_data["project"]
-            if "name" in project_meta and "project_name" not in config_data["general"]:
-                config_data["general"]["project_name"] = project_meta["name"]
-            if "description" in project_meta and "project_desc" not in config_data["general"]:
-                config_data["general"]["project_desc"] = project_meta["description"]
-            if "version" in project_meta and "project_ver" not in config_data["general"]:
-                config_data["general"]["project_ver"] = project_meta["version"]
-
-        # Create config with data from streams
-        try:
-            config: AppConfig = AppConfig.model_validate(config_data)
-
-            # Now apply environment variables which take precedence
-            if General.env_prefix() in os.environ:
-                config.general = General.from_env()
-            if Database.env_prefix() in os.environ:
-                config.database = Database.from_env()
-            if Redis.env_prefix() in os.environ:
-                config.redis = Redis.from_env()
-            if OAuth.env_prefix() in os.environ:
-                config.oauth = OAuth.from_env()
-
-            # Log which values are using defaults
-            logger.debug("Checking for default config values...")
-            config.log_defaults()
-
-            return config
-
-        except ValidationError as e:
-            logger.error(f"Configuration validation error: {e}")
-            raise
+    general: GeneralConfig = Field(default_factory=GeneralConfig)
+    database: DatabaseConfig = Field(default_factory=DatabaseConfig)
+    redis: RedisConfig = Field(default_factory=RedisConfig)
+    oauth: OAuthConfig = Field(default_factory=OAuthConfig)
 
 
 @lru_cache(maxsize=1)
@@ -246,10 +167,29 @@ def get_config() -> AppConfig:
     Uses a singleton pattern with lazy loading.
 
     Returns:
-        AppConfig
-            The application configuration
+        The application configuration
     """
-    loader = ConfigLoader()
-    config = loader.load()
+    config = AppConfig()
     logger.info("Config loaded.")
     return config
+
+
+class SectionedTomlConfigSettingsSource(TomlConfigSettingsSource):
+    """Source of configuration from TOML with section support."""
+
+    DEFAULT_PATH: ClassVar[Path] = Path()
+
+    def __init__(
+        self,
+        settings_cls: type[BaseSettings],
+        toml_file: PathType | None = DEFAULT_PATH,
+        section: str | None = None,
+    ) -> None:
+        self.toml_file_path = (
+            toml_file if toml_file != self.DEFAULT_PATH else settings_cls.model_config.get("toml_file")
+        )
+        self.section = section or settings_cls.model_config.get("toml_file_section")
+        self.toml_data = self._read_files(self.toml_file_path)
+        if self.section:
+            self.toml_data = self.toml_data.get(self.section, {})
+        super(TomlConfigSettingsSource, self).__init__(settings_cls, self.toml_data)

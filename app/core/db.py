@@ -10,7 +10,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import sessionmaker
 from sqlmodel import Session
 
-from app.core.config import Database as DBConfig, get_config
+from app.core.config import DatabaseConfig as DBConfig, get_config
 
 
 class DatabaseClient:

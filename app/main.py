@@ -7,9 +7,9 @@ from app.routes.v1.main_router import v1_router
 
 
 app = FastAPI(
-    title=get_config().general.project_name,
-    version=get_config().general.project_ver,
-    description=get_config().general.project_desc,
+    title=get_config().general.name,
+    version=get_config().general.version,
+    description=get_config().general.description,
 )
 app.mount("/nanoui", StaticFiles(directory="app/public/nanoui"), name="nanoui")
 app.include_router(v1_router)
