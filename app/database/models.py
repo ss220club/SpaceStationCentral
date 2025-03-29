@@ -4,7 +4,7 @@ from secrets import token_urlsafe
 from typing import Unpack
 
 from pydantic import ConfigDict
-from sqlmodel import Field, SQLModel
+from sqlmodel import Field, Relationship, SQLModel
 
 from app.core.utils import utcnow2
 
@@ -26,7 +26,7 @@ class BaseSqlModel(SQLModel):
         cls.__tablename__: str = table_name  # pyright: ignore[reportIncompatibleVariableOverride]
 
 
-class Player(BaseSqlModel, table=True):
+class PlayerBase(BaseSqlModel):
     id: int | None = Field(default=None, primary_key=True)
     discord_id: str = Field(max_length=32, unique=True, index=True)
     """
@@ -34,6 +34,26 @@ class Player(BaseSqlModel, table=True):
     """
     ckey: str | None = Field(default=None, max_length=32, unique=True, index=True)
     # wizards_id: str | None = Field(unique=True, index=True) # Most likely is some kind of uuid
+
+
+class Player(PlayerBase, table=True):
+    whitelists: list["Whitelist"] = Relationship(
+        back_populates="player", sa_relationship_kwargs={"foreign_keys": "Whitelist.player_id", "lazy": "select"}
+    )
+    whitelists_issued: list["Whitelist"] = Relationship(
+        back_populates="admin", sa_relationship_kwargs={"foreign_keys": "Whitelist.admin_id", "lazy": "select"}
+    )
+    whitelists_bans: list["WhitelistBan"] = Relationship(
+        back_populates="player", sa_relationship_kwargs={"foreign_keys": "WhitelistBan.player_id", "lazy": "select"}
+    )
+    whitelists_bans_issued: list["WhitelistBan"] = Relationship(
+        back_populates="admin", sa_relationship_kwargs={"foreign_keys": "WhitelistBan.admin_id", "lazy": "select"}
+    )
+
+
+class PlayerCascade(PlayerBase):
+    whitelists: list["Whitelist"]
+    whitelists_issued: list["Whitelist"]
 
 
 class CkeyLinkToken(BaseSqlModel, table=True):
@@ -58,14 +78,41 @@ class WhitelistBase(BaseSqlModel):
 
 
 class Whitelist(WhitelistBase, table=True):
-    pass
+    player: Player = Relationship(
+        back_populates="whitelists", sa_relationship_kwargs={"foreign_keys": "Whitelist.player_id", "lazy": "select"}
+    )
+    admin: Player = Relationship(
+        back_populates="whitelists_issued",
+        sa_relationship_kwargs={"foreign_keys": "Whitelist.admin_id", "lazy": "select"},
+    )
 
 
-class WhitelistBan(WhitelistBase, table=True):
+class WhitelistCascade(WhitelistBase):
+    player: Player
+    admin: Player
+
+
+class WhitelistBanBase(WhitelistBase):
     expiration_time: datetime = Field(
         default_factory=lambda: utcnow2() + DEFAULT_WHITELIST_BAN_EXPIRATION_TIME,
     )
     reason: str | None = Field(max_length=1024)
+
+
+class WhitelistBan(WhitelistBanBase, table=True):
+    player: Player = Relationship(
+        back_populates="whitelist_bans",
+        sa_relationship_kwargs={"foreign_keys": "WhitelistBan.player_id", "lazy": "select"},
+    )
+    admin: Player = Relationship(
+        back_populates="whitelists_bans_issued",
+        sa_relationship_kwargs={"foreign_keys": "WhitelistBan.admin_id", "lazy": "select"},
+    )
+
+
+class WhitelistBanCascade(WhitelistBanBase):
+    player: Player
+    admin: Player
 
 
 class ApiAuth(BaseSqlModel, table=True):
