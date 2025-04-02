@@ -6,7 +6,10 @@ from app.routes.v1.whitelist import whitelist_ban_router, whitelist_router
 
 
 v1_router = APIRouter(
-    prefix="/v1", tags=["v1"], responses={status.HTTP_401_UNAUTHORIZED: {"description": "Unauthorized"}}
+    prefix="/v1",
+    tags=["v1"],
+    responses={status.HTTP_401_UNAUTHORIZED: {"description": "Unauthorized"}},
+    deprecated=True,
 )
 
 routers = [oauth_router, player_router, whitelist_router, whitelist_ban_router, donate_router]
