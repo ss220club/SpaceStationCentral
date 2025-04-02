@@ -26,6 +26,10 @@ class BaseSqlModel(SQLModel):
         cls.__tablename__: str = table_name  # pyright: ignore[reportIncompatibleVariableOverride]
 
 
+# *Base models exist to create database and pydantic models based on them separately
+# which allows to embed relationships into model dumps
+
+
 class PlayerBase(BaseSqlModel):
     id: int | None = Field(default=None, primary_key=True)
     discord_id: str = Field(max_length=32, unique=True, index=True)
@@ -43,6 +47,7 @@ class Player(PlayerBase, table=True):
     whitelists_issued: list["Whitelist"] = Relationship(
         back_populates="admin", sa_relationship_kwargs={"foreign_keys": "Whitelist.admin_id", "lazy": "select"}
     )
+
     whitelists_bans: list["WhitelistBan"] = Relationship(
         back_populates="player", sa_relationship_kwargs={"foreign_keys": "WhitelistBan.player_id", "lazy": "select"}
     )
@@ -50,10 +55,7 @@ class Player(PlayerBase, table=True):
         back_populates="admin", sa_relationship_kwargs={"foreign_keys": "WhitelistBan.admin_id", "lazy": "select"}
     )
 
-
-class PlayerCascade(PlayerBase):
-    whitelists: list["Whitelist"]
-    whitelists_issued: list["Whitelist"]
+    donations: list["Donation"] = Relationship(back_populates="player")
 
 
 class CkeyLinkToken(BaseSqlModel, table=True):
@@ -87,11 +89,6 @@ class Whitelist(WhitelistBase, table=True):
     )
 
 
-class WhitelistCascade(WhitelistBase):
-    player: Player
-    admin: Player
-
-
 class WhitelistBanBase(WhitelistBase):
     expiration_time: datetime = Field(
         default_factory=lambda: utcnow2() + DEFAULT_WHITELIST_BAN_EXPIRATION_TIME,
@@ -110,17 +107,12 @@ class WhitelistBan(WhitelistBanBase, table=True):
     )
 
 
-class WhitelistBanCascade(WhitelistBanBase):
-    player: Player
-    admin: Player
-
-
 class ApiAuth(BaseSqlModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     token_hash: str = Field(max_length=64, unique=True, index=True)
 
 
-class Donation(BaseSqlModel, table=True):
+class DonationBase(BaseSqlModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     player_id: int = Field(foreign_key="player.id", index=True)
     tier: int = Field()
@@ -129,3 +121,7 @@ class Donation(BaseSqlModel, table=True):
         default_factory=lambda: utcnow2() + DEFAULT_DONATION_EXPIRATION_TIME,
     )
     valid: bool = Field(default=True)
+
+
+class Donation(DonationBase):
+    player: Player = Relationship(back_populates="donations")
