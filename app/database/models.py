@@ -42,17 +42,17 @@ class PlayerBase(BaseSqlModel):
 
 class Player(PlayerBase, table=True):
     whitelists: list["Whitelist"] = Relationship(
-        back_populates="player", sa_relationship_kwargs={"foreign_keys": "Whitelist.player_id", "lazy": "select"}
+        back_populates="player", sa_relationship_kwargs={"foreign_keys": "Whitelist.player_id"}
     )
     whitelists_issued: list["Whitelist"] = Relationship(
-        back_populates="admin", sa_relationship_kwargs={"foreign_keys": "Whitelist.admin_id", "lazy": "select"}
+        back_populates="admin", sa_relationship_kwargs={"foreign_keys": "Whitelist.admin_id"}
     )
 
     whitelist_bans: list["WhitelistBan"] = Relationship(
-        back_populates="player", sa_relationship_kwargs={"foreign_keys": "WhitelistBan.player_id", "lazy": "select"}
+        back_populates="player", sa_relationship_kwargs={"foreign_keys": "WhitelistBan.player_id"}
     )
     whitelist_bans_issued: list["WhitelistBan"] = Relationship(
-        back_populates="admin", sa_relationship_kwargs={"foreign_keys": "WhitelistBan.admin_id", "lazy": "select"}
+        back_populates="admin", sa_relationship_kwargs={"foreign_keys": "WhitelistBan.admin_id"}
     )
 
     donations: list["Donation"] = Relationship(back_populates="player")
@@ -81,11 +81,11 @@ class WhitelistBase(BaseSqlModel):
 
 class Whitelist(WhitelistBase, table=True):
     player: Player = Relationship(
-        back_populates="whitelists", sa_relationship_kwargs={"foreign_keys": "Whitelist.player_id", "lazy": "select"}
+        back_populates="whitelists", sa_relationship_kwargs={"foreign_keys": "Whitelist.player_id"}
     )
     admin: Player = Relationship(
         back_populates="whitelists_issued",
-        sa_relationship_kwargs={"foreign_keys": "Whitelist.admin_id", "lazy": "select"},
+        sa_relationship_kwargs={"foreign_keys": "Whitelist.admin_id"},
     )
 
 
@@ -99,11 +99,11 @@ class WhitelistBanBase(WhitelistBase):
 class WhitelistBan(WhitelistBanBase, table=True):
     player: Player = Relationship(
         back_populates="whitelist_bans",
-        sa_relationship_kwargs={"foreign_keys": "WhitelistBan.player_id", "lazy": "select"},
+        sa_relationship_kwargs={"foreign_keys": "WhitelistBan.player_id"},
     )
     admin: Player = Relationship(
         back_populates="whitelist_bans_issued",
-        sa_relationship_kwargs={"foreign_keys": "WhitelistBan.admin_id", "lazy": "select"},
+        sa_relationship_kwargs={"foreign_keys": "WhitelistBan.admin_id"},
     )
 
 
