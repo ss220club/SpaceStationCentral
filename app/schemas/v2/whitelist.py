@@ -1,6 +1,7 @@
 from app.database.models import Player, WhitelistBanBase, WhitelistBase
 
 
+# region Get
 class WhitelistCascade(WhitelistBase):
     player: Player
     admin: Player
@@ -9,3 +10,6 @@ class WhitelistCascade(WhitelistBase):
 class WhitelistBanCascade(WhitelistBanBase):
     player: Player
     admin: Player
+
+
+# endregion
