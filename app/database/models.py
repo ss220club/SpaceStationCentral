@@ -48,10 +48,10 @@ class Player(PlayerBase, table=True):
         back_populates="admin", sa_relationship_kwargs={"foreign_keys": "Whitelist.admin_id", "lazy": "select"}
     )
 
-    whitelists_bans: list["WhitelistBan"] = Relationship(
+    whitelist_bans: list["WhitelistBan"] = Relationship(
         back_populates="player", sa_relationship_kwargs={"foreign_keys": "WhitelistBan.player_id", "lazy": "select"}
     )
-    whitelists_bans_issued: list["WhitelistBan"] = Relationship(
+    whitelist_bans_issued: list["WhitelistBan"] = Relationship(
         back_populates="admin", sa_relationship_kwargs={"foreign_keys": "WhitelistBan.admin_id", "lazy": "select"}
     )
 
@@ -93,7 +93,7 @@ class WhitelistBanBase(WhitelistBase):
     expiration_time: datetime = Field(
         default_factory=lambda: utcnow2() + DEFAULT_WHITELIST_BAN_EXPIRATION_TIME,
     )
-    reason: str | None = Field(max_length=1024)
+    reason: str | None = Field(max_length=1024, default=None)
 
 
 class WhitelistBan(WhitelistBanBase, table=True):
@@ -102,7 +102,7 @@ class WhitelistBan(WhitelistBanBase, table=True):
         sa_relationship_kwargs={"foreign_keys": "WhitelistBan.player_id", "lazy": "select"},
     )
     admin: Player = Relationship(
-        back_populates="whitelists_bans_issued",
+        back_populates="whitelist_bans_issued",
         sa_relationship_kwargs={"foreign_keys": "WhitelistBan.admin_id", "lazy": "select"},
     )
 
@@ -112,7 +112,7 @@ class ApiAuth(BaseSqlModel, table=True):
     token_hash: str = Field(max_length=64, unique=True, index=True)
 
 
-class DonationBase(BaseSqlModel, table=True):
+class DonationBase(BaseSqlModel):
     id: int | None = Field(default=None, primary_key=True)
     player_id: int = Field(foreign_key="player.id", index=True)
     tier: int = Field()
@@ -123,5 +123,5 @@ class DonationBase(BaseSqlModel, table=True):
     valid: bool = Field(default=True)
 
 
-class Donation(DonationBase):
+class Donation(DonationBase, table=True):
     player: Player = Relationship(back_populates="donations")
