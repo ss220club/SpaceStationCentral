@@ -10,8 +10,8 @@ from app.core.utils import utcnow2
 from app.database.models import Player, Whitelist, WhitelistBan
 from app.deps import AUTH_RESPONSES, SessionDep, verify_bearer
 from app.routes.v1.player import get_player_by_discord_id
-from app.schemas.generic import PaginatedResponse, paginate_selection
-from app.schemas.whitelist import NewWhitelist, NewWhitelistBan, WhitelistPatch
+from app.schemas.v1.generic import PaginatedResponse, paginate_selection
+from app.schemas.v1.whitelist import NewWhitelist, NewWhitelistBan, WhitelistPatch
 
 
 logger = logging.getLogger(__name__)

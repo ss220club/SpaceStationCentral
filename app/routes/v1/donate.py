@@ -10,8 +10,8 @@ from app.core.utils import utcnow2
 from app.database.models import Donation, Player
 from app.deps import SessionDep, verify_bearer
 from app.routes.v1.player import get_or_create_player_by_discord_id
-from app.schemas.donate import DonationPatch, NewDonationDiscord
-from app.schemas.generic import PaginatedResponse, paginate_selection
+from app.schemas.v1.donate import DonationPatch, NewDonationDiscord
+from app.schemas.v1.generic import PaginatedResponse, paginate_selection
 
 
 logger = logging.getLogger(__name__)
