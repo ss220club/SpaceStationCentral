@@ -2,7 +2,7 @@ from app.database.models import DonationBase, Player
 
 
 # region Get
-class DonationCascade(DonationBase):
+class DonationNested(DonationBase):
     player: Player
 
 

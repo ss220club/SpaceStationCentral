@@ -2,7 +2,7 @@ from app.database.models import Donation, PlayerBase, Whitelist, WhitelistBan
 
 
 # region Get
-class PlayerCascade(PlayerBase):
+class PlayerNested(PlayerBase):
     whitelists: list[Whitelist]
     whitelists_issued: list[Whitelist]
 

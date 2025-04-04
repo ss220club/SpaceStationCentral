@@ -2,12 +2,12 @@ from app.database.models import Player, WhitelistBanBase, WhitelistBase
 
 
 # region Get
-class WhitelistCascade(WhitelistBase):
+class WhitelistNested(WhitelistBase):
     player: Player
     admin: Player
 
 
-class WhitelistBanCascade(WhitelistBanBase):
+class WhitelistBanNested(WhitelistBanBase):
     player: Player
     admin: Player
 
