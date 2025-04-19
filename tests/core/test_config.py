@@ -122,7 +122,7 @@ class TestDatabaseConfig:
 
 class TestConfigFiles:
     def test_load_from_config_file(self, mocker: MockerFixture, mock_config_file: Callable[[], BinaryIO]) -> None:
-        mock_toml_source = mocker.patch("app.core.config.TomlConfigSettingsSource._read_file")
+        mock_toml_source = mocker.patch("app.core.config.TomlConfigSettingsSource._read_files")
         config_data = tomllib.load(mock_config_file())
         mock_toml_source.return_value = config_data
 
@@ -148,7 +148,7 @@ class TestConfigFiles:
         assert config.database.name == "central"
         assert config.redis.channel == "central"
 
-    def test_load_from_env_vars(self, mocker: MockerFixture, mock_env_vars: None) -> None:  # noqa: ARG002  # pyright: ignore[reportUnusedParameter]
+    def test_load_from_env_vars(self, mock_env_vars: None) -> None:  # noqa: ARG002  # pyright: ignore[reportUnusedParameter]
         config = AppConfig()
 
         assert config.general.name == "Env Project"
@@ -163,8 +163,8 @@ class TestConfigFiles:
         mocker: MockerFixture,
         mock_env_vars: None,  # noqa: ARG002  # pyright: ignore[reportUnusedParameter]
     ) -> None:
-        mock_toml_source = mocker.patch("app.core.config.TomlConfigSettingsSource._read_file")
-        mock_pyproject_source = mocker.patch("app.core.config.PyprojectTomlConfigSettingsSource._read_file")
+        mock_toml_source = mocker.patch("app.core.config.TomlConfigSettingsSource._read_files")
+        mock_pyproject_source = mocker.patch("app.core.config.PyprojectTomlConfigSettingsSource._read_files")
         mock_toml_source.return_value = {
             "general": {
                 "name": "Config Project",
