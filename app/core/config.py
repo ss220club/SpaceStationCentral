@@ -1,5 +1,6 @@
 import logging
 from functools import lru_cache
+from os import environ
 from pathlib import Path
 from typing import ClassVar, override
 
@@ -26,7 +27,8 @@ class ConfigSection(BaseSettings):
     """Base class for all configuration sections."""
 
     GENERAL_PREFIX: ClassVar[str] = "SSC_"
-    CONFIG_FILE: ClassVar[str] = ".config.toml"
+    CONFIG_FILE_ENV: ClassVar[str] = GENERAL_PREFIX + "CONFIG_FILE"
+    CONFIG_FILE_DEFAULT: ClassVar[str] = ".config.toml"
 
     @override
     @classmethod
@@ -41,9 +43,13 @@ class ConfigSection(BaseSettings):
         return (
             init_settings,
             env_settings,
-            SectionedTomlConfigSettingsSource(cls, toml_file=cls.CONFIG_FILE),
+            SectionedTomlConfigSettingsSource(cls, toml_file=cls.get_config_file()),
             file_secret_settings,
         )
+
+    @classmethod
+    def get_config_file(cls) -> str:
+        return environ.get(cls.CONFIG_FILE_ENV) or cls.CONFIG_FILE_DEFAULT
 
     def log_defaults(self) -> None:
         """Log fields that use their default values."""
@@ -87,7 +93,7 @@ class GeneralConfig(ConfigSection):
         return (
             init_settings,
             env_settings,
-            SectionedTomlConfigSettingsSource(cls, toml_file=cls.CONFIG_FILE),
+            SectionedTomlConfigSettingsSource(cls, toml_file=cls.get_config_file()),
             PyprojectTomlConfigSettingsSource(settings_cls),
             file_secret_settings,
         )

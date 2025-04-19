@@ -26,6 +26,7 @@ dev = [
     "pytest>=8.3.5",
     "pytest-asyncio>=0.24.0",
     "pytest-cov>=6.0.0",
+    "pytest-env>=1.1.5",
     "pytest-mock>=3.14.0",
     "ruff>=0.9.10",
 ]
@@ -55,6 +56,9 @@ testpaths = ["tests"]
 pythonpath = ["."]
 asyncio_mode = "auto"
 addopts = "--cov=app --cov-report=term-missing"
+
+[tool.pytest_env]
+SSC_CONFIG_FILE = "config_example.toml"
 
 [tool.coverage.run]
 branch = true
