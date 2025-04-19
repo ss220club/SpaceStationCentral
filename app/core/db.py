@@ -10,7 +10,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import sessionmaker
 from sqlmodel import Session
 
-from app.core.config import DatabaseConfig as DBConfig, get_config
+from app.core.config import DatabaseConfig, get_config
 
 
 class DatabaseClient:
@@ -26,7 +26,7 @@ class DatabaseClient:
     def __init__(
         self,
         connection_string: str | None = None,
-        config: DBConfig | None = None,
+        config: DatabaseConfig | None = None,
         echo: bool | None = None,
         pool_size: int | None = None,
         max_overflow: int | None = None,
@@ -45,23 +45,21 @@ class DatabaseClient:
             pool_recycle: Time (in seconds) before connections are recycled, if None will use value from config
             pool_pre_ping: Whether to enable connection pool pre-ping, if None will use value from config
         """
-        # Get default config if none provided
-        if config is None:
-            config = get_config().database
-
         # Build connection string if not provided
-        if connection_string is None:
+        if connection_string is None and config is not None:
             connection_string = config.get_connection_string()
 
-        # Set pool parameters, using config as fallback
-        self._pool_size = pool_size if pool_size is not None else config.pool_size
-        self._max_overflow = max_overflow if max_overflow is not None else config.overflow
-        self._pool_recycle = pool_recycle if pool_recycle is not None else config.pool_recycle
-        self._pool_pre_ping = pool_pre_ping if pool_pre_ping is not None else config.pool_pre_ping
+        if connection_string is None:
+            raise ValueError("Either connection_string or config must be provided")
 
-        # Store parameters
         self._connection_string = connection_string
-        self._echo = echo if echo is not None else config.echo
+
+        # Set parameters with priority: explicit params > config > defaults
+        self._pool_size = pool_size if pool_size is not None else (config.pool_size if config else 10)
+        self._max_overflow = max_overflow if max_overflow is not None else (config.overflow if config else 5)
+        self._pool_recycle = pool_recycle if pool_recycle is not None else (config.pool_recycle if config else 3600)
+        self._pool_pre_ping = pool_pre_ping if pool_pre_ping is not None else (config.pool_pre_ping if config else True)
+        self._echo = echo if echo is not None else (config.echo if config else False)
 
         # Initialize engine as None, will be created on demand
         self._engine: Engine | None = None
@@ -159,8 +157,7 @@ class DatabaseClient:
         Check if the database connection is working.
 
         Returns:
-            bool
-                True if connection is working, False otherwise
+            True if connection is working, False otherwise
         """
         try:
             with self.engine.connect() as conn:
