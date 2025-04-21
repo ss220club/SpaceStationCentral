@@ -4,7 +4,7 @@ from secrets import token_urlsafe
 from typing import Unpack
 
 from pydantic import ConfigDict
-from sqlmodel import Field, SQLModel
+from sqlmodel import Field, Relationship, SQLModel
 
 from app.core.utils import utcnow2
 
@@ -25,7 +25,11 @@ class BaseSqlModel(SQLModel):
         cls.__tablename__: str = table_name  # pyright: ignore[reportIncompatibleVariableOverride]
 
 
-class Player(BaseSqlModel, table=True):
+# *Base models exist to create database and pydantic models based on them separately
+# which allows to embed relationships into model dumps
+
+
+class PlayerBase(BaseSqlModel):
     id: int | None = Field(default=None, primary_key=True)
     discord_id: str = Field(max_length=32, unique=True, index=True)
     """
@@ -33,6 +37,24 @@ class Player(BaseSqlModel, table=True):
     """
     ckey: str | None = Field(default=None, max_length=32, unique=True, index=True)
     # wizards_id: str | None = Field(unique=True, index=True) # Most likely is some kind of uuid
+
+
+class Player(PlayerBase, table=True):
+    whitelists: list["Whitelist"] = Relationship(
+        back_populates="player", sa_relationship_kwargs={"foreign_keys": "Whitelist.player_id"}
+    )
+    whitelists_issued: list["Whitelist"] = Relationship(
+        back_populates="admin", sa_relationship_kwargs={"foreign_keys": "Whitelist.admin_id"}
+    )
+
+    whitelist_bans: list["WhitelistBan"] = Relationship(
+        back_populates="player", sa_relationship_kwargs={"foreign_keys": "WhitelistBan.player_id"}
+    )
+    whitelist_bans_issued: list["WhitelistBan"] = Relationship(
+        back_populates="admin", sa_relationship_kwargs={"foreign_keys": "WhitelistBan.admin_id"}
+    )
+
+    donations: list["Donation"] = Relationship(back_populates="player")
 
 
 class CkeyLinkToken(BaseSqlModel, table=True):
@@ -57,14 +79,31 @@ class WhitelistBase(BaseSqlModel):
 
 
 class Whitelist(WhitelistBase, table=True):
-    pass
+    player: Player = Relationship(
+        back_populates="whitelists", sa_relationship_kwargs={"foreign_keys": "Whitelist.player_id"}
+    )
+    admin: Player = Relationship(
+        back_populates="whitelists_issued",
+        sa_relationship_kwargs={"foreign_keys": "Whitelist.admin_id"},
+    )
 
 
-class WhitelistBan(WhitelistBase, table=True):
+class WhitelistBanBase(WhitelistBase):
     expiration_time: datetime = Field(
         default_factory=lambda: utcnow2() + DEFAULT_WHITELIST_BAN_EXPIRATION_TIME,
     )
-    reason: str | None = Field(max_length=1024)
+    reason: str | None = Field(max_length=1024, default=None)
+
+
+class WhitelistBan(WhitelistBanBase, table=True):
+    player: Player = Relationship(
+        back_populates="whitelist_bans",
+        sa_relationship_kwargs={"foreign_keys": "WhitelistBan.player_id"},
+    )
+    admin: Player = Relationship(
+        back_populates="whitelist_bans_issued",
+        sa_relationship_kwargs={"foreign_keys": "WhitelistBan.admin_id"},
+    )
 
 
 class ApiAuth(BaseSqlModel, table=True):
@@ -72,7 +111,7 @@ class ApiAuth(BaseSqlModel, table=True):
     token_hash: str = Field(max_length=64, unique=True, index=True)
 
 
-class Donation(BaseSqlModel, table=True):
+class DonationBase(BaseSqlModel):
     id: int | None = Field(default=None, primary_key=True)
     player_id: int = Field(foreign_key="player.id", index=True)
     tier: int = Field()
@@ -81,3 +120,7 @@ class Donation(BaseSqlModel, table=True):
         default_factory=lambda: utcnow2() + DEFAULT_DONATION_EXPIRATION_TIME,
     )
     valid: bool = Field(default=True)
+
+
+class Donation(DonationBase, table=True):
+    player: Player = Relationship(back_populates="donations")

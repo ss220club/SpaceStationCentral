@@ -11,8 +11,8 @@ from app.core.utils import utcnow2
 from app.database.models import CkeyLinkToken, Player
 from app.deps import AUTH_RESPONSES, SessionDep, verify_bearer
 from app.oauth.discord import DiscordOAuthClient
-from app.schemas.generic import PaginatedResponse
-from app.schemas.player import NewPlayer, PlayerPatch
+from app.schemas.v1.generic import PaginatedResponse
+from app.schemas.v1.player import NewPlayer, PlayerPatch
 
 
 logger = logging.getLogger(__name__)

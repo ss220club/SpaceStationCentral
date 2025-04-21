@@ -7,6 +7,8 @@ from app.database.models import Player
 from pydantic import BaseModel
 
 
+# endregion
+# region Post
 class NewWhitelistBase(BaseModel, metaclass=ABCMeta):
     server_type: str
     duration_days: int
@@ -66,6 +68,8 @@ NewWhitelist = NewWhitelistDiscord | NewWhitelistCkey
 NewWhitelistBan = NewWhitelistBanDiscord | NewWhitelistBanCkey
 
 
+# endregion
+# region Patch
 class WhitelistPatch(BaseModel):
     valid: bool | None = None
     expiration_time: datetime | None = None
