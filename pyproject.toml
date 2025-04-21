@@ -58,6 +58,7 @@ asyncio_mode = "auto"
 addopts = "--cov=app --cov-report=term-missing"
 
 [tool.pytest_env]
+SSC_TEST = "true"
 SSC_CONFIG_FILE = "config_example.toml"
 
 [tool.coverage.run]

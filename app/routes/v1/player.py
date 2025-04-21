@@ -10,7 +10,7 @@ from app.core.redis import default_client
 from app.core.utils import utcnow2
 from app.database.models import CkeyLinkToken, Player
 from app.deps import AUTH_RESPONSES, SessionDep, verify_bearer
-from app.fur_discord import DiscordOAuthClient
+from app.oauth.discord import DiscordOAuthClient
 from app.schemas.generic import PaginatedResponse
 from app.schemas.player import NewPlayer, PlayerPatch
 

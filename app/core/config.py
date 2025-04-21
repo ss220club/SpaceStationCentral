@@ -30,6 +30,8 @@ class ConfigSection(BaseSettings):
     CONFIG_FILE_ENV: ClassVar[str] = GENERAL_PREFIX + "CONFIG_FILE"
     CONFIG_FILE_DEFAULT: ClassVar[str] = ".config.toml"
 
+    TEST_ENV: ClassVar[str] = GENERAL_PREFIX + "TEST"
+
     @override
     @classmethod
     def settings_customise_sources(
