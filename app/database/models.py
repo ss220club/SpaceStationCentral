@@ -1,3 +1,4 @@
+import enum
 import re
 from datetime import datetime, timedelta
 from secrets import token_urlsafe
@@ -15,6 +16,8 @@ DEFAULT_DONATION_EXPIRATION_TIME = timedelta(days=30)
 
 DEFAULT_TOKEN_LEN = 32
 DEFAULT_TOKEN_EXPIRATION_TIME = timedelta(minutes=5)
+
+MAX_REASON_LENGTH = 2048
 
 
 class BaseSqlModel(SQLModel):
@@ -57,6 +60,13 @@ class Player(PlayerBase, table=True):
 
     donations: list["Donation"] = Relationship(back_populates="player")
 
+    bans: list["Ban"] = Relationship(back_populates="player")
+    bans_issued: list["Ban"] = Relationship(back_populates="admin")
+    bans_edited: list["BanHistory"] = Relationship(back_populates="admin")
+
+    notes: list["Note"] = Relationship(back_populates="player")
+    notes_issued: list["Note"] = Relationship(back_populates="admin")
+
 
 class CkeyLinkToken(BaseSqlModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
@@ -93,7 +103,7 @@ class WhitelistBanBase(WhitelistBase):
     expiration_time: datetime = Field(
         default_factory=lambda: utcnow2() + DEFAULT_WHITELIST_BAN_EXPIRATION_TIME,
     )
-    reason: str | None = Field(max_length=1024, default=None)
+    reason: str | None = Field(max_length=MAX_REASON_LENGTH, default=None)
 
 
 class WhitelistBan(WhitelistBanBase, table=True):
@@ -125,3 +135,85 @@ class DonationBase(BaseSqlModel):
 
 class Donation(DonationBase, table=True):
     player: Player = Relationship(back_populates="donations")
+
+
+class BanType(enum.Enum):
+    GAME = "game"
+    JOB = "job"
+
+
+class BanBase(BaseSqlModel):
+    id: int | None = Field(default=None, primary_key=True)
+    player_id: int = Field(foreign_key="player.id", index=True)
+    admin_id: int = Field(foreign_key="player.id")
+    issue_time: datetime = Field(default_factory=datetime.now)
+    expiration_time: datetime = Field()
+    reason: str | None = Field(max_length=MAX_REASON_LENGTH, default=None)
+    ban_type: BanType = Field(default=BanType.GAME)
+    target: str | None = Field(max_length=32, default=None, index=True)
+    """
+    For job bans, this would be the job name
+    """
+    valid: bool = Field(default=True)
+
+
+class Ban(BanBase, table=True):
+    player: Player = Relationship(
+        back_populates="bans",
+        sa_relationship_kwargs={"foreign_keys": "Ban.player_id"},
+    )
+    admin: Player = Relationship(
+        back_populates="bans_issued",
+        sa_relationship_kwargs={"foreign_keys": "Ban.admin_id"},
+    )
+    history: list["BanHistory"] = Relationship(back_populates="ban")
+
+
+class NoteKind(enum.Enum):
+    NOTE = "note"
+    WATCHLIST = "watchlist"
+
+
+class NoteSeverity(enum.Enum):
+    POSITIVE = "positive"
+    INFO = "info"
+    MINOR = "minor"
+    MEDIUM = "medium"
+    HIGH = "high"
+
+
+class NoteBase(BaseSqlModel):
+    id: int | None = Field(default=None, primary_key=True)
+    player_id: int = Field(foreign_key="player.id", index=True)
+    admin_id: int = Field(foreign_key="player.id")
+    issue_time: datetime = Field(default_factory=datetime.now)
+    content: str = Field(max_length=MAX_REASON_LENGTH)
+    kind: NoteKind = Field(default=NoteKind.NOTE)
+    severity: NoteSeverity = Field(default=NoteSeverity.INFO)
+    secret: bool = Field(default=True)
+    valid: bool = Field(default=True)
+
+
+class Note(NoteBase, table=True):
+    player: Player = Relationship(back_populates="notes")
+    admin: Player = Relationship(back_populates="notes_issued")
+
+
+class BanHistoryAction(enum.Enum):
+    CREATE = "create"
+    UPDATE = "update"
+    UNBAN = "unban"
+
+
+class BanHistoryBase(BaseSqlModel):
+    id: int | None = Field(default=None, primary_key=True)
+    ban_id: int = Field(foreign_key="ban.id", index=True)
+    admin_id: int = Field(foreign_key="player.id")
+    action: BanHistoryAction = Field(default=BanHistoryAction.CREATE)
+    details: str | None = Field(max_length=MAX_REASON_LENGTH, default=None)
+    timestamp: datetime = Field(default_factory=datetime.now)
+
+
+class BanHistory(BanHistoryBase, table=True):
+    ban: BanBase = Relationship(back_populates="history")
+    admin: Player = Relationship(back_populates="ban_history")
