@@ -216,4 +216,4 @@ class BanHistoryBase(BaseSqlModel):
 
 class BanHistory(BanHistoryBase, table=True):
     ban: BanBase = Relationship(back_populates="history")
-    admin: Player = Relationship(back_populates="ban_history")
+    admin: Player = Relationship(back_populates="bans_edited")
