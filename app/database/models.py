@@ -151,9 +151,7 @@ class BanBase(BaseSqlModel):
     reason: str | None = Field(max_length=MAX_REASON_LENGTH, default=None)
     ban_type: BanType = Field(default=BanType.GAME)
     target: str | None = Field(max_length=32, default=None, index=True)
-    """
-    For job bans, this would be the job name
-    """
+    """For job bans, this would be the job name"""
     valid: bool = Field(default=True)
 
 

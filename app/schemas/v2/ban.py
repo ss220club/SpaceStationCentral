@@ -12,13 +12,20 @@ class BanNested(BanBase):
 
 # endregion
 
+
 # region Patch
-
-
 class BanUpdate(BaseModel):
+    update_author_id: int
+    """The admin who is updating the ban"""
+
+
+class BanUpdateDetails(BanUpdate):
     reason: str | None = None
     expiration_time: datetime | None = None
-    valid: bool | None = None
+
+
+class BanUpdateUnban(BanUpdate):
+    reason: str | None = None
 
 
 # endregion
