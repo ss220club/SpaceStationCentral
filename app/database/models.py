@@ -18,6 +18,7 @@ DEFAULT_TOKEN_LEN = 32
 DEFAULT_TOKEN_EXPIRATION_TIME = timedelta(minutes=5)
 
 MAX_REASON_LENGTH = 2048
+MAX_HISTORY_DETAILS_LEN = MAX_REASON_LENGTH * 2
 
 
 class BaseSqlModel(SQLModel):
@@ -208,7 +209,8 @@ class BanHistoryBase(BaseSqlModel):
     ban_id: int = Field(foreign_key="ban.id", index=True)
     admin_id: int = Field(foreign_key="player.id")
     action: BanHistoryAction = Field(default=BanHistoryAction.CREATE)
-    details: str | None = Field(max_length=MAX_REASON_LENGTH, default=None)
+    details: str | None = Field(max_length=MAX_HISTORY_DETAILS_LEN, default=None)
+    """Contains arbitrary info"""
     timestamp: datetime = Field(default_factory=datetime.now)
 
 

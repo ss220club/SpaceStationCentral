@@ -10,7 +10,7 @@ async def get_player(db: AsyncSession, player_id: int) -> Player:
     Get player by id.
 
     Raises:
-        HTTPException(404) - Player not found
+        HTTPException(404): Player not found
 
     """
     player = await db.get(Player, player_id)
@@ -24,7 +24,7 @@ async def get_player_by_discord_id(db: AsyncSession, discord_id: str) -> Player:
     Get player by discord id.
 
     Raises:
-        HTTPException(404) - Player not found
+        HTTPException(404): Player not found
 
     """
     player = await db.get(Player, discord_id)
@@ -38,7 +38,7 @@ async def get_player_by_ckey(db: AsyncSession, ckey: str) -> Player:
     Get player by ckey.
 
     Raises:
-        HTTPException(404) - Player not found
+        HTTPException(404): Player not found
 
     """
     player = await db.get(Player, ckey)
