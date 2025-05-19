@@ -1,64 +1,59 @@
 # pyright: reportUnknownMemberType = false
 import re
+from os import environ
 from typing import Any
 
 import aiohttp
 from aiocache import cached  # pyright: ignore[reportMissingTypeStubs]
+from app.core.config import ConfigSection
+from app.core.typing import JSONAny
+from app.oauth.discord.exeptions import RateLimitedError, ScopeMissingError, UnauthorizedError
+from app.oauth.discord.models import GuildPreview, User
 from fastapi import Depends, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from starlette.datastructures import URL
 
-from app.core.typing import JSONAny
-from app.fur_discord.config import DISCORD_API_URL, DISCORD_OAUTH_AUTHENTICATION_URL, DISCORD_TOKEN_URL
-from app.fur_discord.exeptions import RateLimitedError, ScopeMissingError, UnauthorizedError
-from app.fur_discord.models import GuildPreview, User
+
+DISCORD_URL = "https://discord.com"
+DISCORD_API_URL = f"{DISCORD_URL}/api/v10"
+DISCORD_OAUTH_URL = f"{DISCORD_URL}/api/oauth2"
+DISCORD_TOKEN_URL = f"{DISCORD_OAUTH_URL}/token"
+DISCORD_OAUTH_AUTHENTICATION_URL = f"{DISCORD_OAUTH_URL}/authorize"
 
 
 class DiscordOAuthClient:
-    """
-    Client for Discord Oauth2.
-
-    Parameters
-    ----------
-    client_id:
-        Discord application client ID.
-    client_secret:
-        Discord application client secret.
-    redirect_uri:
-        Discord application redirect URI.
-    """
+    """Client for Discord Oauth2."""
 
     def __init__(
         self, client_id: int, client_secret: str, redirect_uri: str, scopes: tuple[str, ...] = ("identify",)
     ) -> None:
+        """
+        Initialize the Discord OAuth client.
+
+        Args:
+            client_id: Discord application client ID.
+            client_secret: Discord application client secret.
+            redirect_uri: Discord application redirect URI.
+            scopes: Discord application scopes.
+        """
         self.client_id: int = client_id
         self.client_secret: str = client_secret
         self.redirect_uri: str = redirect_uri
-        self.scopes: str = " ".join(scopes)
+        self.scopes: tuple[str, ...] = scopes
 
-    @property
-    def oauth_login_url(self) -> str:
-        """Return a Discord Login URL."""
-        client_id = f"client_id={self.client_id}"
-        redirect_uri = f"redirect_uri={self.redirect_uri}"
-        scopes = f"scope={self.scopes}"
-        response_type = "response_type=code"
-        return f"{DISCORD_OAUTH_AUTHENTICATION_URL}?{client_id}&{redirect_uri}&{scopes}&{response_type}"
-
-    def get_oauth_login_url(self, state: str | None) -> str:
+    def get_oauth_login_url(self, state: str) -> URL:
         """Return a Discord Login URL with state."""
-        url = URL(DISCORD_OAUTH_AUTHENTICATION_URL).include_query_params(
+        return URL(DISCORD_OAUTH_AUTHENTICATION_URL).include_query_params(
             client_id=self.client_id,
             redirect_uri=self.redirect_uri,
-            scope=self.scopes,
+            scope=" ".join(self.scopes),
             response_type="code",
-            state=state or "",
+            state=state,
         )
-        return str(url)
 
-    @cached(ttl=550)
-    async def request(self, route: str, token: str | None = None, method: str = "GET") -> JSONAny:
-        headers = {"Authorization": f"Bearer {token or ''}"}
+    @cached(ttl=550, skip_cache_func=lambda _: environ.get(ConfigSection.TEST_ENV) == "true")  # pyright: ignore [reportUnknownLambdaType]
+    async def request(self, route: str, token: str, method: str = "GET") -> JSONAny:
+        headers = {"Authorization": f"Bearer {token}"}
         if method == "GET":
             async with aiohttp.ClientSession() as session:
                 resp = await session.get(f"{DISCORD_API_URL}{route}", headers=headers)
@@ -84,7 +79,8 @@ class DiscordOAuthClient:
             "redirect_uri": self.redirect_uri,
             "scope": self.scopes,
         }
-        async with aiohttp.ClientSession() as session, session.post(DISCORD_TOKEN_URL, data=payload) as resp:
+        async with aiohttp.ClientSession() as session:
+            resp = await session.post(DISCORD_TOKEN_URL, data=payload)
             resp_json: dict[str, Any] = await resp.json()
             return resp_json.get("access_token"), resp_json.get("refresh_token")
 
@@ -95,7 +91,8 @@ class DiscordOAuthClient:
             "grant_type": "refresh_token",
             "refresh_token": refresh_token,
         }
-        async with aiohttp.ClientSession() as session, session.post(DISCORD_TOKEN_URL, data=payload) as resp:
+        async with aiohttp.ClientSession() as session:
+            resp = await session.post(DISCORD_TOKEN_URL, data=payload)
             resp_json: dict[str, Any] = await resp.json()
             return resp_json.get("access_token"), resp_json.get("refresh_token")
 
@@ -122,7 +119,8 @@ class DiscordOAuthClient:
         guilds: list[dict[str, Any]] = response
         return [GuildPreview.model_validate(guild) for guild in guilds]
 
-    def get_token(self, request: Request) -> str:
+    @staticmethod
+    def get_token(request: Request) -> str:
         authorization_header = request.headers.get("Authorization")
         if not authorization_header:
             raise UnauthorizedError
@@ -131,7 +129,7 @@ class DiscordOAuthClient:
             return match["token"]
         raise UnauthorizedError
 
-    async def is_auntheficated(self, token: str) -> bool:
+    async def is_authenticated(self, token: str) -> bool:
         route = "/oauth2/@me"
         try:
             await self.request(route, token)
@@ -141,5 +139,5 @@ class DiscordOAuthClient:
 
     async def requires_authorization(self, bearer: HTTPAuthorizationCredentials | None = None) -> None:
         credentials = bearer or Depends(HTTPBearer())
-        if not await self.is_auntheficated(credentials.credentials):
+        if not await self.is_authenticated(credentials.credentials):
             raise UnauthorizedError

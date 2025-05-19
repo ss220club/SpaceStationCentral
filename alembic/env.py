@@ -2,8 +2,8 @@ import os
 from logging.config import fileConfig
 
 from alembic import context
-from app.core.db import engine
-from app.database.models import SQLModel as Base
+from app.core.db import get_db_client
+from app.database.models import BaseSqlModel as Base
 
 
 # this is the Alembic Config object, which provides
@@ -60,7 +60,7 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
-    connectable = engine
+    connectable = get_db_client().engine
 
     with connectable.connect() as connection:
         context.configure(connection=connection, target_metadata=target_metadata)

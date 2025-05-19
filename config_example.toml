@@ -9,6 +9,7 @@ pool_size = 10
 overflow = 5
 pool_recycle = 3600
 pool_pre_ping = true
+echo = false
 
 [redis]
 connection_string = "redis://default:user@hostname:6379"
@@ -24,8 +25,8 @@ discord_server_invite = "https://discord.com/invite/12345678"
 
 [general]
 # These values are provided by pyproject.toml and can be overridden here.
-#project_name = "FurFur Central"
-#project_desc = "API для объеденения множества серверов SS13 и SS14 в одну систему."
-#project_ver = "0.1.0"
+project_name = "FurFur Central"
+project_desc = "API для объеденения множества серверов SS13 и SS14 в одну систему."
+project_ver = "0.1.0"
 favicon_path = "app/assets/favicon.png"
 discord_webhook = "https://discord.com/api/webhooks/12345678/12345678"

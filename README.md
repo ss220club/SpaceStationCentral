@@ -27,7 +27,7 @@ docker run -v ./.config.toml:/srv/ssc/.config.toml:ro -v ./logs:/srv/ssc/logs --
 После клонирования репозитория, установите менеджер `uv` и все зависимости проекта, включая dev-зависимости:
 
 ```sh
-pip install uv
+pipx install uv
 uv venv
 uv sync --frozen
 ```
