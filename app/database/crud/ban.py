@@ -43,6 +43,7 @@ async def get_bans_by_player_ckey(db: AsyncSession, ckey: str) -> list[Ban]:
 
 # region: POST
 async def create_ban(db: AsyncSession, ban: Ban) -> Ban:
+    # TODO: send redis event to publish the ban in discord
     db.add(ban)
     await db.commit()
     logger.info("Created ban: %s", ban)
