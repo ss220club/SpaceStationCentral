@@ -27,7 +27,7 @@ async def get_player_by_discord_id(db: AsyncSession, discord_id: str) -> Player:
         HTTPException(404): Player not found
 
     """
-    player = await db.get(Player, discord_id)
+    player = (await db.exec(select(Player).where(Player.discord_id == discord_id))).first()
     if player is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Player not found")
     return player
@@ -41,7 +41,7 @@ async def get_player_by_ckey(db: AsyncSession, ckey: str) -> Player:
         HTTPException(404): Player not found
 
     """
-    player = await db.get(Player, ckey)
+    player = (await db.exec(select(Player).where(Player.ckey == ckey))).first()
     if player is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Player not found")
     return player
