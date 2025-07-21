@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 # region: GET
 async def get_note(db: AsyncSession, note_id: int) -> Note:
     """
-    Get note by id
+    Get note by id.
 
     Raises:
         HTTPException(404): Note not found
@@ -28,9 +28,7 @@ async def get_note(db: AsyncSession, note_id: int) -> Note:
 
 # region: POST
 async def create_note(db: AsyncSession, note: Note) -> Note:
-    """
-    Create note
-    """
+    """Create note."""
     db.add(note)
     await db.commit()
     logger.info("Created note: %s", note)

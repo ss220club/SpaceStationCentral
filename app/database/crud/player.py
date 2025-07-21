@@ -1,4 +1,5 @@
 from fastapi import HTTPException, status
+from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.database.models import Player

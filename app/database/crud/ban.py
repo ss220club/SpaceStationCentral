@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 async def get_ban(db: AsyncSession, ban_id: int) -> Ban:
     """
-    Get ban by id
+    Get ban by id.
 
     Raises:
         HTTPException(404) - Ban not found
