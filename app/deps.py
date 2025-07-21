@@ -6,12 +6,12 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlmodel import Session, select
 
-from app.core.db import engine
+from app.core.db import get_db_client
 from app.database.models import ApiAuth
 
 
-def get_session() -> Generator[Session]:
-    with Session(engine) as session:
+def get_session() -> Generator[Session, Any, Any]:
+    with get_db_client().session_factory() as session:
         yield session
 
 
