@@ -40,7 +40,7 @@ class DiscordWebhookHandler(logging.Handler):
         self.webhook_url: str = webhook_url
 
     @classmethod
-    def from_config(cls) -> "DiscordWebhookHandler":
+    def from_config(cls) -> Self:
         """
         Create a handler instance from application configuration.
 
