@@ -1,4 +1,5 @@
 import logging
+from collections.abc import Sequence
 
 from fastapi import HTTPException, status
 from sqlmodel import select
@@ -28,14 +29,19 @@ async def get_ban(db: AsyncSession, ban_id: int) -> Ban:
     return ban
 
 
-async def get_bans_by_player_discord_id(db: AsyncSession, discord_id: str) -> list[Ban]:
+async def get_bans_by_player_discord_id(db: AsyncSession, discord_id: str) -> Sequence[Ban]:
     selection = select(Ban).where(Ban.player.discord_id == discord_id)
-    return list((await db.exec(selection)).all())
+    return (await db.exec(selection)).all()
 
 
-async def get_bans_by_player_ckey(db: AsyncSession, ckey: str) -> list[Ban]:
+async def get_bans_by_player_ckey(db: AsyncSession, ckey: str) -> Sequence[Ban]:
     selection = select(Ban).where(Ban.player.ckey == ckey)
-    return list((await db.exec(selection)).all())
+    return (await db.exec(selection)).all()
+
+
+async def get_ban_history(db: AsyncSession, ban_id: int) -> Sequence[BanHistory]:
+    selection = select(BanHistory).where(BanHistory.ban_id == ban_id)
+    return (await db.exec(selection)).all()
 
 
 # endregion

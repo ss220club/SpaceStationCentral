@@ -24,3 +24,17 @@ async def get_note(db: AsyncSession, note_id: int) -> Note:
 
 
 # endregion
+
+
+# region: POST
+async def create_note(db: AsyncSession, note: Note) -> Note:
+    """
+    Create note
+    """
+    db.add(note)
+    await db.commit()
+    logger.info("Created note: %s", note)
+    return note
+
+
+# endregion
