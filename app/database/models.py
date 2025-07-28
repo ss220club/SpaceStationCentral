@@ -58,14 +58,24 @@ class Player(PlayerBase, table=True):
         back_populates="admin", sa_relationship_kwargs={"foreign_keys": "WhitelistBan.admin_id"}
     )
 
-    donations: list["Donation"] = Relationship(back_populates="player")
+    donations: list["Donation"] = Relationship(
+        back_populates="player", sa_relationship_kwargs={"foreign_keys": "Donation.player_id"}
+    )
 
-    bans: list["Ban"] = Relationship(back_populates="player")
-    bans_issued: list["Ban"] = Relationship(back_populates="admin")
-    bans_edited: list["BanHistory"] = Relationship(back_populates="admin")
+    bans: list["Ban"] = Relationship(back_populates="player", sa_relationship_kwargs={"foreign_keys": "Ban.player_id"})
+    bans_issued: list["Ban"] = Relationship(
+        back_populates="admin", sa_relationship_kwargs={"foreign_keys": "Ban.admin_id"}
+    )
+    bans_edited: list["BanHistory"] = Relationship(
+        back_populates="admin", sa_relationship_kwargs={"foreign_keys": "BanHistory.admin_id"}
+    )
 
-    notes: list["Note"] = Relationship(back_populates="player")
-    notes_issued: list["Note"] = Relationship(back_populates="admin")
+    notes: list["Note"] = Relationship(
+        back_populates="player", sa_relationship_kwargs={"foreign_keys": "Note.player_id"}
+    )
+    notes_issued: list["Note"] = Relationship(
+        back_populates="admin", sa_relationship_kwargs={"foreign_keys": "Note.admin_id"}
+    )
 
 
 class CkeyLinkToken(BaseSqlModel, table=True):
@@ -193,8 +203,14 @@ class NoteBase(BaseSqlModel):
 
 
 class Note(NoteBase, table=True):
-    player: Player = Relationship(back_populates="notes")
-    admin: Player = Relationship(back_populates="notes_issued")
+    player: Player = Relationship(
+        back_populates="notes",
+        sa_relationship_kwargs={"foreign_keys": "Note.player_id"},
+    )
+    admin: Player = Relationship(
+        back_populates="notes_issued",
+        sa_relationship_kwargs={"foreign_keys": "Note.admin_id"},
+    )
 
 
 class BanHistoryAction(enum.Enum):

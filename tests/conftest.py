@@ -37,6 +37,11 @@ def db_session() -> Generator[Session]:
     with Session(sqlite_engine) as session:
         yield session
 
+    # Drop all tables in the in-memory SQLite database
+    SQLModel.metadata.drop_all(sqlite_engine)
+    # Close the in-memory SQLite database engine
+    sqlite_engine.dispose()
+
 
 @pytest.fixture(scope="function", autouse=True)
 def override_session(app: FastAPI, db_session: Session) -> Generator[None]:
