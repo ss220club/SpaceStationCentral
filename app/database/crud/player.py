@@ -1,12 +1,12 @@
 from fastapi import HTTPException, status
 from sqlmodel import select
-from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.database.models import Player
+from app.deps import SessionDep
 
 
 # region: GET
-async def get_player(db: AsyncSession, player_id: int) -> Player:
+def get_player(db: SessionDep, player_id: int) -> Player:
     """
     Get player by id.
 
@@ -14,13 +14,13 @@ async def get_player(db: AsyncSession, player_id: int) -> Player:
         HTTPException(404): Player not found
 
     """
-    player = await db.get(Player, player_id)
+    player = db.get(Player, player_id)
     if player is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Player not found")
     return player
 
 
-async def get_player_by_discord_id(db: AsyncSession, discord_id: str) -> Player:
+def get_player_by_discord_id(db: SessionDep, discord_id: str) -> Player:
     """
     Get player by discord id.
 
@@ -28,13 +28,13 @@ async def get_player_by_discord_id(db: AsyncSession, discord_id: str) -> Player:
         HTTPException(404): Player not found
 
     """
-    player = (await db.exec(select(Player).where(Player.discord_id == discord_id))).first()
+    player = (db.exec(select(Player).where(Player.discord_id == discord_id))).first()
     if player is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Player not found")
     return player
 
 
-async def get_player_by_ckey(db: AsyncSession, ckey: str) -> Player:
+def get_player_by_ckey(db: SessionDep, ckey: str) -> Player:
     """
     Get player by ckey.
 
@@ -42,7 +42,7 @@ async def get_player_by_ckey(db: AsyncSession, ckey: str) -> Player:
         HTTPException(404): Player not found
 
     """
-    player = (await db.exec(select(Player).where(Player.ckey == ckey))).first()
+    player = (db.exec(select(Player).where(Player.ckey == ckey))).first()
     if player is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Player not found")
     return player
