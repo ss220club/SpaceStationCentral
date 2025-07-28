@@ -20,7 +20,7 @@ def app() -> Generator[FastAPI]:
 
 @pytest.fixture(scope="session")
 def client(app: FastAPI) -> Generator[TestClient]:
-    yield TestClient(app, base_url="http://127.0.0.1:8000/v1/")
+    yield TestClient(app, base_url="http://127.0.0.1:8000/")
 
 
 @pytest.fixture(scope="function")
