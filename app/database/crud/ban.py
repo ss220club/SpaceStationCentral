@@ -4,7 +4,7 @@ from collections.abc import Sequence
 from fastapi import HTTPException, status
 from sqlmodel import select
 
-from app.database.crud.player import get_player
+from app.database.crud.player import get_player_by_id
 from app.database.models import Ban, BanHistory, BanHistoryAction
 from app.deps import SessionDep
 from app.schemas.v2.ban import BanUpdateDetails, BanUpdateUnban
@@ -68,7 +68,7 @@ def create_ban(db: SessionDep, ban: Ban) -> Ban:
 
 def update_ban(db: SessionDep, ban_id: int, update: BanUpdateDetails) -> Ban:
     ban = get_ban(db, ban_id)
-    update_author = get_player(db, update.update_author_id)
+    update_author = get_player_by_id(db, update.update_author_id)
     update_data = update.model_dump(exclude_unset=True)
     for key, value in update_data.items():
         setattr(ban, key, value)
@@ -90,7 +90,7 @@ def update_ban(db: SessionDep, ban_id: int, update: BanUpdateDetails) -> Ban:
 
 def unban(db: SessionDep, ban_id: int, unban: BanUpdateUnban) -> Ban:
     ban = get_ban(db, ban_id)
-    update_author = get_player(db, unban.update_author_id)
+    update_author = get_player_by_id(db, unban.update_author_id)
     ban.valid = False
     db.add(ban)
     db.commit()

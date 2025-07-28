@@ -1,7 +1,7 @@
 import app.database.crud.player as crud
 from app.deps import SessionDep
 from app.schemas.v2.player import PlayerNested
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, status
 
 
 player_router = APIRouter(prefix="/players", tags=["Player"])
@@ -18,10 +18,6 @@ player_router = APIRouter(prefix="/players", tags=["Player"])
 )
 async def get_player_by_discord_id(session: SessionDep, discord_id: str) -> PlayerNested:
     player = crud.get_player_by_discord_id(session, discord_id)
-
-    if player is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Player not found")
-
     return PlayerNested.model_validate(player)
 
 
@@ -35,10 +31,6 @@ async def get_player_by_discord_id(session: SessionDep, discord_id: str) -> Play
 )
 async def get_player_by_ckey(session: SessionDep, ckey: str) -> PlayerNested:
     player = crud.get_player_by_ckey(session, ckey)
-
-    if player is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Player not found")
-
     return PlayerNested.model_validate(player)
 
 
@@ -52,10 +44,6 @@ async def get_player_by_ckey(session: SessionDep, ckey: str) -> PlayerNested:
 )
 async def get_player_by_id(session: SessionDep, id: int) -> PlayerNested:  # pylint: disable=redefined-builtin
     player = crud.get_player_by_id(session, id)
-
-    if player is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Player not found")
-
     return PlayerNested.model_validate(player)
 
 
