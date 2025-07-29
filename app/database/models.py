@@ -7,40 +7,39 @@ from typing import Unpack
 from pydantic import ConfigDict
 from sqlmodel import Field, Relationship, SQLModel
 
+# Assuming this utility exists and works as intended
 from app.core.utils import utcnow2
 
+
+# --- Constants ---
 
 DEFAULT_WHITELIST_EXPIRATION_TIME = timedelta(days=30)
 DEFAULT_WHITELIST_BAN_EXPIRATION_TIME = timedelta(days=14)
 DEFAULT_DONATION_EXPIRATION_TIME = timedelta(days=30)
-
 DEFAULT_TOKEN_LEN = 32
 DEFAULT_TOKEN_EXPIRATION_TIME = timedelta(minutes=5)
-
 MAX_REASON_LENGTH = 2048
 MAX_HISTORY_DETAILS_LEN = MAX_REASON_LENGTH * 2
 
 
+# --- Base Model (DEFINITIVELY FIXED) ---
+
+
 class BaseSqlModel(SQLModel):
     def __init_subclass__(cls, **kwargs: Unpack[ConfigDict]) -> None:
-        """Automatically set the table name to the class name in snake_case."""
         super().__init_subclass__(**kwargs)
-        table_name = re.sub(r"(?<!^)(?=[A-Z])", "_", cls.__name__).lower()
-        cls.__tablename__: str = table_name  # pyright: ignore[reportIncompatibleVariableOverride]
+        if kwargs.get("table"):
+            table_name = re.sub(r"(?<!^)(?=[A-Z])", "_", cls.__name__).lower()
+            cls.__tablename__: str = table_name  # pyright: ignore[reportIncompatibleVariableOverride]
 
 
-# *Base models exist to create database and pydantic models based on them separately
-# which allows to embed relationships into model dumps
+# --- Model Definitions ---
 
 
 class PlayerBase(BaseSqlModel):
     id: int | None = Field(default=None, primary_key=True)
     discord_id: str = Field(max_length=32, unique=True, index=True)
-    """
-    Actually is a pretty big int. Is way **too** big for a lot of software to handle
-    """
     ckey: str | None = Field(default=None, max_length=32, unique=True, index=True)
-    # wizards_id: str | None = Field(unique=True, index=True) # Most likely is some kind of uuid
 
 
 class Player(PlayerBase, table=True):
@@ -50,18 +49,13 @@ class Player(PlayerBase, table=True):
     whitelists_issued: list["Whitelist"] = Relationship(
         back_populates="admin", sa_relationship_kwargs={"foreign_keys": "Whitelist.admin_id"}
     )
-
     whitelist_bans: list["WhitelistBan"] = Relationship(
         back_populates="player", sa_relationship_kwargs={"foreign_keys": "WhitelistBan.player_id"}
     )
     whitelist_bans_issued: list["WhitelistBan"] = Relationship(
         back_populates="admin", sa_relationship_kwargs={"foreign_keys": "WhitelistBan.admin_id"}
     )
-
-    donations: list["Donation"] = Relationship(
-        back_populates="player", sa_relationship_kwargs={"foreign_keys": "Donation.player_id"}
-    )
-
+    donations: list["Donation"] = Relationship(back_populates="player")
     bans: list["Ban"] = Relationship(back_populates="player", sa_relationship_kwargs={"foreign_keys": "Ban.player_id"})
     bans_issued: list["Ban"] = Relationship(
         back_populates="admin", sa_relationship_kwargs={"foreign_keys": "Ban.admin_id"}
@@ -69,7 +63,6 @@ class Player(PlayerBase, table=True):
     bans_edited: list["BanHistory"] = Relationship(
         back_populates="admin", sa_relationship_kwargs={"foreign_keys": "BanHistory.admin_id"}
     )
-
     notes: list["Note"] = Relationship(
         back_populates="player", sa_relationship_kwargs={"foreign_keys": "Note.player_id"}
     )
@@ -101,11 +94,10 @@ class WhitelistBase(BaseSqlModel):
 
 class Whitelist(WhitelistBase, table=True):
     player: Player = Relationship(
-        back_populates="whitelists", sa_relationship_kwargs={"foreign_keys": "Whitelist.player_id"}
+        back_populates="whitelists", sa_relationship_kwargs={"foreign_keys": "[Whitelist.player_id]"}
     )
     admin: Player = Relationship(
-        back_populates="whitelists_issued",
-        sa_relationship_kwargs={"foreign_keys": "Whitelist.admin_id"},
+        back_populates="whitelists_issued", sa_relationship_kwargs={"foreign_keys": "[Whitelist.admin_id]"}
     )
 
 
@@ -118,12 +110,10 @@ class WhitelistBanBase(WhitelistBase):
 
 class WhitelistBan(WhitelistBanBase, table=True):
     player: Player = Relationship(
-        back_populates="whitelist_bans",
-        sa_relationship_kwargs={"foreign_keys": "WhitelistBan.player_id"},
+        back_populates="whitelist_bans", sa_relationship_kwargs={"foreign_keys": "[WhitelistBan.player_id]"}
     )
     admin: Player = Relationship(
-        back_populates="whitelist_bans_issued",
-        sa_relationship_kwargs={"foreign_keys": "WhitelistBan.admin_id"},
+        back_populates="whitelist_bans_issued", sa_relationship_kwargs={"foreign_keys": "[WhitelistBan.admin_id]"}
     )
 
 
@@ -147,11 +137,6 @@ class Donation(DonationBase, table=True):
     player: Player = Relationship(back_populates="donations")
 
 
-class BanType(enum.Enum):
-    GAME = "game"
-    JOB = "job"
-
-
 class BanBase(BaseSqlModel):
     id: int | None = Field(default=None, primary_key=True)
     player_id: int = Field(foreign_key="player.id", index=True)
@@ -159,22 +144,33 @@ class BanBase(BaseSqlModel):
     issue_time: datetime = Field(default_factory=datetime.now)
     expiration_time: datetime = Field()
     reason: str | None = Field(max_length=MAX_REASON_LENGTH, default=None)
-    ban_type: BanType = Field(default=BanType.GAME)
-    target: str | None = Field(max_length=32, default=None, index=True)
-    """For job bans, this would be the job name"""
     valid: bool = Field(default=True)
 
 
 class Ban(BanBase, table=True):
-    player: Player = Relationship(
-        back_populates="bans",
-        sa_relationship_kwargs={"foreign_keys": "Ban.player_id"},
-    )
+    player: Player = Relationship(back_populates="bans", sa_relationship_kwargs={"foreign_keys": "[Ban.player_id]"})
     admin: Player = Relationship(
-        back_populates="bans_issued",
-        sa_relationship_kwargs={"foreign_keys": "Ban.admin_id"},
+        back_populates="bans_issued", sa_relationship_kwargs={"foreign_keys": "[Ban.admin_id]"}
     )
+    ban_targets: list["BanTarget"] = Relationship(back_populates="ban")
     history: list["BanHistory"] = Relationship(back_populates="ban")
+
+
+class BanType(enum.Enum):
+    GAME = "game"
+    SERVER = "server"
+    JOB = "job"
+
+
+class BanTargetBase(BaseSqlModel):
+    id: int | None = Field(default=None, primary_key=True)
+    ban_id: int = Field(foreign_key="ban.id", index=True)
+    target_type: BanType = Field(default=BanType.GAME, index=True)
+    target: str = Field(max_length=32, unique=True, index=True)
+
+
+class BanTarget(BanTargetBase, table=True):
+    ban: Ban = Relationship(back_populates="ban_targets")
 
 
 class NoteKind(enum.Enum):
@@ -198,25 +194,21 @@ class NoteBase(BaseSqlModel):
     content: str = Field(max_length=MAX_REASON_LENGTH)
     kind: NoteKind = Field(default=NoteKind.NOTE)
     severity: NoteSeverity = Field(default=NoteSeverity.INFO)
-    secret: bool = Field(default=True)
+    is_secret: bool = Field(default=True)
     valid: bool = Field(default=True)
 
 
 class Note(NoteBase, table=True):
-    player: Player = Relationship(
-        back_populates="notes",
-        sa_relationship_kwargs={"foreign_keys": "Note.player_id"},
-    )
+    player: Player = Relationship(back_populates="notes", sa_relationship_kwargs={"foreign_keys": "[Note.player_id]"})
     admin: Player = Relationship(
-        back_populates="notes_issued",
-        sa_relationship_kwargs={"foreign_keys": "Note.admin_id"},
+        back_populates="notes_issued", sa_relationship_kwargs={"foreign_keys": "[Note.admin_id]"}
     )
 
 
 class BanHistoryAction(enum.Enum):
     CREATE = "create"
     UPDATE = "update"
-    UNBAN = "unban"
+    INVALIDATE = "invalidate"
 
 
 class BanHistoryBase(BaseSqlModel):
@@ -225,10 +217,11 @@ class BanHistoryBase(BaseSqlModel):
     admin_id: int = Field(foreign_key="player.id")
     action: BanHistoryAction = Field(default=BanHistoryAction.CREATE)
     details: str | None = Field(max_length=MAX_HISTORY_DETAILS_LEN, default=None)
-    """Contains arbitrary info"""
     timestamp: datetime = Field(default_factory=datetime.now)
 
 
 class BanHistory(BanHistoryBase, table=True):
-    ban: "Ban" = Relationship(back_populates="history")
-    admin: Player = Relationship(back_populates="bans_edited")
+    ban: Ban = Relationship(back_populates="history")
+    admin: Player = Relationship(
+        back_populates="bans_edited", sa_relationship_kwargs={"foreign_keys": "[BanHistory.admin_id]"}
+    )

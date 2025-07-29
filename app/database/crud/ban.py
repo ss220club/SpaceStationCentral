@@ -1,9 +1,9 @@
 import logging
 from collections.abc import Sequence
 
-from fastapi import HTTPException, status
 from sqlmodel import Session, select
 
+from app.core.exceptions import EntityNotFoundError
 from app.database.crud.player import get_player_by_id
 from app.database.models import Ban, BanHistory, BanHistoryAction
 from app.schemas.v2.ban import BanUpdateDetails, BanUpdateUnban
@@ -16,15 +16,10 @@ logger = logging.getLogger(__name__)
 
 
 def get_ban(db: Session, ban_id: int) -> Ban:
-    """
-    Get ban by id.
-
-    Raises:
-        HTTPException(404) - Ban not found
-    """
+    """Get ban by id."""
     ban = db.get(Ban, ban_id)
     if ban is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ban not found")
+        raise EntityNotFoundError("Ban not found")
     return ban
 
 
@@ -50,13 +45,14 @@ def get_ban_history(db: Session, ban_id: int) -> Sequence[BanHistory]:
 def create_ban(db: Session, ban: Ban) -> Ban:
     # TODO: send redis event to publish the ban in discord
     db.add(ban)
-    db.commit()
-    logger.info("Created ban: %s", ban)
+    db.flush()
     db.refresh(ban)
+    logger.info("Created ban: %s", ban)
     history = BanHistory(ban_id=ban.id, admin_id=ban.admin_id, action=BanHistoryAction.CREATE, details=ban.reason)  # pyright: ignore[reportArgumentType]
     db.add(history)
     db.commit()
-    logger.debug("Created ban history: %s", history)
+    db.refresh(history)
+    logger.debug("Created initial ban history: %s", history)
     return ban
 
 
@@ -97,7 +93,7 @@ def unban(db: Session, ban_id: int, unban: BanUpdateUnban) -> Ban:
     history = BanHistory(
         ban_id=ban.id,  # pyright: ignore[reportArgumentType]
         admin_id=update_author.id,  # pyright: ignore[reportArgumentType]
-        action=BanHistoryAction.UNBAN,
+        action=BanHistoryAction.INVALIDATE,
         details=unban.reason,
     )
     db.add(history)

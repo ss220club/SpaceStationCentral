@@ -48,3 +48,5 @@ async def get_player_by_id(session: SessionDep, id: int) -> PlayerNested:  # pyl
 
 
 # endregion
+
+# TODO: Other v1 functions. Probably not needed due to java migration
