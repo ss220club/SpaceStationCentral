@@ -1,36 +1,44 @@
-from fastapi import status
-from fastapi.exceptions import HTTPException
-from sqlmodel import select
+from sqlmodel import Session, select
 
+from app.core.exceptions import EntityNotFoundError
 from app.database.models import Player
-from app.deps import SessionDep
 
 
 # region: GET
-def get_player_by_id(db: SessionDep, player_id: int) -> Player:
+def get_player_by_id(db: Session, player_id: int) -> Player:
     """Get player by id."""
     player = db.get(Player, player_id)
     if player is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Player not found")
+        raise EntityNotFoundError("Player not found")
 
     return player
 
 
-def get_player_by_discord_id(db: SessionDep, discord_id: str) -> Player:
+def get_player_by_discord_id(db: Session, discord_id: str) -> Player:
     """Get player by discord id."""
     player = (db.exec(select(Player).where(Player.discord_id == discord_id))).first()
     if player is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Player not found")
+        raise EntityNotFoundError("Player not found")
 
     return player
 
 
-def get_player_by_ckey(db: SessionDep, ckey: str) -> Player:
+def get_player_by_ckey(db: Session, ckey: str) -> Player:
     """Get player by ckey."""
     player = (db.exec(select(Player).where(Player.ckey == ckey))).first()
     if player is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Player not found")
+        raise EntityNotFoundError("Player not found")
 
+    return player
+
+
+# endregion
+# region: POST
+def create_player(db: Session, discord_id: str, ckey: str) -> Player:
+    player = Player(discord_id=discord_id, ckey=ckey)
+    db.add(player)
+    db.commit()
+    db.refresh(player)
     return player
 
 

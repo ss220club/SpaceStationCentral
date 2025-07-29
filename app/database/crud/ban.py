@@ -2,11 +2,10 @@ import logging
 from collections.abc import Sequence
 
 from fastapi import HTTPException, status
-from sqlmodel import select
+from sqlmodel import Session, select
 
 from app.database.crud.player import get_player_by_id
 from app.database.models import Ban, BanHistory, BanHistoryAction
-from app.deps import SessionDep
 from app.schemas.v2.ban import BanUpdateDetails, BanUpdateUnban
 
 
@@ -16,7 +15,7 @@ logger = logging.getLogger(__name__)
 # region: GET
 
 
-def get_ban(db: SessionDep, ban_id: int) -> Ban:
+def get_ban(db: Session, ban_id: int) -> Ban:
     """
     Get ban by id.
 
@@ -29,17 +28,17 @@ def get_ban(db: SessionDep, ban_id: int) -> Ban:
     return ban
 
 
-def get_bans_by_player_discord_id(db: SessionDep, discord_id: str) -> Sequence[Ban]:
+def get_bans_by_player_discord_id(db: Session, discord_id: str) -> Sequence[Ban]:
     selection = select(Ban).where(Ban.player.discord_id == discord_id)
     return (db.exec(selection)).all()
 
 
-def get_bans_by_player_ckey(db: SessionDep, ckey: str) -> Sequence[Ban]:
+def get_bans_by_player_ckey(db: Session, ckey: str) -> Sequence[Ban]:
     selection = select(Ban).where(Ban.player.ckey == ckey)
     return (db.exec(selection)).all()
 
 
-def get_ban_history(db: SessionDep, ban_id: int) -> Sequence[BanHistory]:
+def get_ban_history(db: Session, ban_id: int) -> Sequence[BanHistory]:
     selection = select(BanHistory).where(BanHistory.ban_id == ban_id)
     return (db.exec(selection)).all()
 
@@ -48,7 +47,7 @@ def get_ban_history(db: SessionDep, ban_id: int) -> Sequence[BanHistory]:
 
 
 # region: POST
-def create_ban(db: SessionDep, ban: Ban) -> Ban:
+def create_ban(db: Session, ban: Ban) -> Ban:
     # TODO: send redis event to publish the ban in discord
     db.add(ban)
     db.commit()
@@ -66,7 +65,7 @@ def create_ban(db: SessionDep, ban: Ban) -> Ban:
 # region: PATCH
 
 
-def update_ban(db: SessionDep, ban_id: int, update: BanUpdateDetails) -> Ban:
+def update_ban(db: Session, ban_id: int, update: BanUpdateDetails) -> Ban:
     ban = get_ban(db, ban_id)
     update_author = get_player_by_id(db, update.update_author_id)
     update_data = update.model_dump(exclude_unset=True)
@@ -88,7 +87,7 @@ def update_ban(db: SessionDep, ban_id: int, update: BanUpdateDetails) -> Ban:
     return ban
 
 
-def unban(db: SessionDep, ban_id: int, unban: BanUpdateUnban) -> Ban:
+def unban(db: Session, ban_id: int, unban: BanUpdateUnban) -> Ban:
     ban = get_ban(db, ban_id)
     update_author = get_player_by_id(db, unban.update_author_id)
     ban.valid = False

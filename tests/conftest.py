@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 
 import pytest
 from app.core.utils import utcnow2
+from app.database.crud.player import create_player
 from app.database.models import ApiAuth, Player, Whitelist
 from app.deps import get_session, hash_bearer_token
 from app.main import app as main_app
@@ -78,14 +79,6 @@ def generate_ckey() -> str:
 @pytest.fixture(scope="function")
 def ckey() -> Generator[str]:
     yield generate_ckey()
-
-
-def create_player(db_session: Session, ckey: str, discord_id: str) -> Player:
-    player = Player(ckey=ckey, discord_id=discord_id)
-    db_session.add(player)
-    db_session.commit()
-    db_session.refresh(player)
-    return player
 
 
 @pytest.fixture(scope="function")

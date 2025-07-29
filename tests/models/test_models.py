@@ -1,6 +1,5 @@
+from app.database.crud.player import create_player
 from sqlmodel import Session
-
-from tests.conftest import create_player
 
 
 class TestDBMetadata:
@@ -19,7 +18,7 @@ class TestCreateEntry:
         discord_id: str,
         ckey: str,
     ) -> None:
-        player = create_player(db_session, ckey, discord_id)
+        player = create_player(db_session, discord_id, ckey)
 
         assert player.discord_id == discord_id
         assert player.ckey == ckey
