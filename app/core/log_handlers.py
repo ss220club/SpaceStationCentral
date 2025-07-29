@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from datetime import UTC, datetime
-from typing import ClassVar, Self, override
+from typing import ClassVar, override
 
 from discord import Color, Embed, Webhook
 
