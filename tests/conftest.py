@@ -14,6 +14,11 @@ from fastapi.testclient import TestClient
 from sqlmodel import Session, SQLModel, create_engine
 
 
+# The sqlalchemy fireaxe. Open in case of emergemncy
+# import logging
+# logging.getLogger("sqlalchemy.engine").setLevel(logging.DEBUG)
+
+
 @pytest.fixture(scope="session")
 def app() -> Generator[FastAPI]:
     yield main_app

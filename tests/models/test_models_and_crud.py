@@ -54,7 +54,7 @@ class TestCreateEntry:
         update_ban_by_id(db_session, ban.id, update)  # pyright: ignore[reportArgumentType]
 
         assert len(player.bans_edited) == 1
-        assert player.bans_edited[0] == ban
+        assert player.bans_edited[0].ban == ban
 
         assert len(ban.history) == 2  # First history entry is creation
         assert ban.history[1].action == BanHistoryAction.UPDATE

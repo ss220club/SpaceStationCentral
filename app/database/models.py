@@ -22,22 +22,22 @@ MAX_HISTORY_DETAILS_LEN = MAX_REASON_LENGTH * 2
 
 
 class NoteKind(enum.Enum):
-    NOTE = "note"
-    WATCHLIST = "watchlist"
+    NOTE = "NOTE"
+    WATCHLIST = "WATCHLIST"
 
 
 class NoteSeverity(enum.Enum):
-    POSITIVE = "positive"
-    INFO = "info"
-    MINOR = "minor"
-    MEDIUM = "medium"
-    HIGH = "high"
+    POSITIVE = "POSITIVE"
+    INFO = "INFO"
+    MINOR = "MINOR"
+    MEDIUM = "MEDIUM"
+    HIGH = "HIGH"
 
 
 class BanHistoryAction(enum.Enum):
-    CREATE = "create"
-    UPDATE = "update"
-    INVALIDATE = "invalidate"
+    CREATE = "CREATE"
+    UPDATE = "UPDATE"
+    INVALIDATE = "INVALIDATE"
 
 
 # endregion
@@ -50,9 +50,6 @@ class BaseSqlModel(SQLModel):
         if kwargs.get("table"):
             table_name = re.sub(r"(?<!^)(?=[A-Z])", "_", cls.__name__).lower()
             cls.__tablename__: str = table_name  # pyright: ignore[reportIncompatibleVariableOverride]
-
-
-# --- Model Definitions ---
 
 
 class PlayerBase(BaseSqlModel):
@@ -81,7 +78,9 @@ class Player(PlayerBase, table=True):
     )
     bans_edited: list["BanHistory"] = Relationship(
         sa_relationship_kwargs={
-            "primaryjoin": f"and_(Player.id == BanHistory.admin_id, BanHistory.action != '{BanHistoryAction.CREATE}')",
+            "primaryjoin": "and_(BanHistory.admin_id == Player.id, "
+            + f"BanHistory.action != '{BanHistoryAction.CREATE.name}')",
+            # Could be a sqlite thing, but somewhy db stores the enum entry name
             "viewonly": True,
         }
     )
@@ -225,4 +224,7 @@ class BanHistoryBase(BaseSqlModel):
 
 class BanHistory(BanHistoryBase, table=True):
     ban: Ban = Relationship(back_populates="history")
-    admin: Player = Relationship(back_populates="bans_edited")
+    admin: Player = Relationship()
+
+
+# endregion
