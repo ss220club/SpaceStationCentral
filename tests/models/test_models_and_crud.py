@@ -1,6 +1,6 @@
 from app.database.crud.ban import create_ban, update_ban_by_id, update_ban_unban_by_id
 from app.database.crud.player import create_player
-from app.database.models import Ban, BanHistoryAction, BanType, Player
+from app.database.models import BanHistoryAction, BanType, Player
 from app.schemas.v2.ban import BanUpdateDetails, BanUpdateUnban
 from sqlmodel import Session
 

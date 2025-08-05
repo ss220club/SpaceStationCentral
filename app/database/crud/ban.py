@@ -1,9 +1,8 @@
-from datetime import timedelta
 import logging
-from collections.abc import Sequence
+from datetime import timedelta
 
 from sqlalchemy.exc import IntegrityError
-from sqlmodel import Session, select
+from sqlmodel import Session
 
 from app.core.exceptions import EntityNotFoundError
 from app.core.utils import utcnow2

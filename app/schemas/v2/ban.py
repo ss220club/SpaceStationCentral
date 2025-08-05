@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from app.database.models import BanBase, BanTargetBase, BanType, Player
+from app.database.models import BanBase, BanType, Player
 from pydantic import BaseModel
 
 
@@ -16,11 +16,11 @@ class BanNested(BanBase):
 # region Patch
 class BanUpdate(BaseModel):
     admin_id: int
-    """The admin who is updating the ban"""
+    """The admin who is updating the ban."""
 
 
 class BanUpdateDetails(BanUpdate):
-    """Handled in update_ban_by_id"""
+    """Handled in update_ban_by_id."""
 
     reason: str | None = None
     expiration_time: datetime | None = None
