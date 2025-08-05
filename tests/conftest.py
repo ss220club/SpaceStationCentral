@@ -5,12 +5,18 @@ from datetime import datetime, timedelta
 
 import pytest
 from app.core.utils import utcnow2
+from app.database.crud.player import create_player
 from app.database.models import ApiAuth, Player, Whitelist
 from app.deps import get_session, hash_bearer_token
 from app.main import app as main_app
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from sqlmodel import Session, SQLModel, create_engine
+
+
+# The sqlalchemy fireaxe. Open in case of emergemncy
+# import logging
+# logging.getLogger("sqlalchemy.engine").setLevel(logging.DEBUG)
 
 
 @pytest.fixture(scope="session")
@@ -20,7 +26,7 @@ def app() -> Generator[FastAPI]:
 
 @pytest.fixture(scope="session")
 def client(app: FastAPI) -> Generator[TestClient]:
-    yield TestClient(app, base_url="http://127.0.0.1:8000/v1/")
+    yield TestClient(app, base_url="http://127.0.0.1:8000/")
 
 
 @pytest.fixture(scope="function")
@@ -36,6 +42,11 @@ def db_session() -> Generator[Session]:
     # Return a session to the in-memory SQLite database
     with Session(sqlite_engine) as session:
         yield session
+
+    # Drop all tables in the in-memory SQLite database
+    SQLModel.metadata.drop_all(sqlite_engine)
+    # Close the in-memory SQLite database engine
+    sqlite_engine.dispose()
 
 
 @pytest.fixture(scope="function", autouse=True)
@@ -73,14 +84,6 @@ def generate_ckey() -> str:
 @pytest.fixture(scope="function")
 def ckey() -> Generator[str]:
     yield generate_ckey()
-
-
-def create_player(db_session: Session, ckey: str, discord_id: str) -> Player:
-    player = Player(ckey=ckey, discord_id=discord_id)
-    db_session.add(player)
-    db_session.commit()
-    db_session.refresh(player)
-    return player
 
 
 @pytest.fixture(scope="function")

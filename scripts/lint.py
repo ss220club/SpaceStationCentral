@@ -9,8 +9,10 @@ COMMANDS = {
     BASEDPYRIGHT: "basedpyright app tests",
 }
 
+
 def run_command(cmd: str) -> int:
     return subprocess.run(cmd, shell=True, check=False).returncode
+
 
 failed_linters: set[str] = set()
 for linter, command in COMMANDS.items():

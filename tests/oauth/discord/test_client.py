@@ -62,8 +62,7 @@ class TestDiscordOAuthClient:
         result: Any = await client.request("/users/@me", "test_token")
 
         mock_get.assert_called_once_with(
-            "https://discord.com/api/v10/users/@me",
-            headers={"Authorization": "Bearer test_token"}
+            "https://discord.com/api/v10/users/@me", headers={"Authorization": "Bearer test_token"}
         )
         assert result == response_data
 
@@ -87,14 +86,11 @@ class TestDiscordOAuthClient:
 
     async def test_request_rate_limited(self, client: DiscordOAuthClient, mocker: MockerFixture) -> None:
         """Test rate limited API request."""
-        rate_limit_data = {
-            "message": "You are being rate limited.",
-            "retry_after": 5
-        }
+        rate_limit_data = {"message": "You are being rate limited.", "retry_after": 5}
         rate_limit_headers = {
             "X-RateLimit-Limit": "10",
             "X-RateLimit-Remaining": "0",
-            "X-RateLimit-Reset": "1619283600"
+            "X-RateLimit-Reset": "1619283600",
         }
 
         mock_response = mocker.AsyncMock()
@@ -112,8 +108,7 @@ class TestDiscordOAuthClient:
             await client.request("/users/@me", "test_token")
 
         mock_session.get.assert_called_once_with(
-            "https://discord.com/api/v10/users/@me",
-            headers={"Authorization": "Bearer test_token"}
+            "https://discord.com/api/v10/users/@me", headers={"Authorization": "Bearer test_token"}
         )
 
         assert exc_info.value.json == rate_limit_data
@@ -138,8 +133,7 @@ class TestDiscordOAuthClient:
         result: Any = await client.request("/test", "test_token", method="POST")
 
         mock_session.post.assert_called_once_with(
-            "https://discord.com/api/v10/test",
-            headers={"Authorization": "Bearer test_token"}
+            "https://discord.com/api/v10/test", headers={"Authorization": "Bearer test_token"}
         )
 
         assert result == expected_data
@@ -158,7 +152,7 @@ class TestDiscordOAuthClient:
             "access_token": expected_access_token,
             "refresh_token": expected_refresh_token,
             "token_type": "Bearer",
-            "expires_in": 604800
+            "expires_in": 604800,
         }
 
         mock_response = mocker.MagicMock()
@@ -184,7 +178,7 @@ class TestDiscordOAuthClient:
                 "code": "test_code",
                 "redirect_uri": client.redirect_uri,
                 "scope": client.scopes,
-            }
+            },
         )
 
     async def test_refresh_access_token(self, client: DiscordOAuthClient, mocker: MockerFixture) -> None:
@@ -195,7 +189,7 @@ class TestDiscordOAuthClient:
             "access_token": expected_access_token,
             "refresh_token": expected_refresh_token,
             "token_type": "Bearer",
-            "expires_in": 604800
+            "expires_in": 604800,
         }
 
         mock_response = mocker.MagicMock()
@@ -219,10 +213,7 @@ class TestDiscordOAuthClient:
             "grant_type": "refresh_token",
             "refresh_token": "old_refresh_token",
         }
-        mock_post.assert_called_once_with(
-            "https://discord.com/api/oauth2/token",
-            data=expected_payload
-        )
+        mock_post.assert_called_once_with("https://discord.com/api/oauth2/token", data=expected_payload)
 
     async def test_user(self, client: DiscordOAuthClient, mocker: MockerFixture) -> None:
         """Test getting user information."""
@@ -243,7 +234,7 @@ class TestDiscordOAuthClient:
             client_id=123456789,
             client_secret="test_secret",
             redirect_uri="http://localhost:8000/callback",
-            scopes=("guilds",)
+            scopes=("guilds",),
         )
 
         with pytest.raises(ScopeMissingError) as exc_info:
@@ -265,26 +256,28 @@ class TestDiscordOAuthClient:
 
     async def test_guilds(self, client: DiscordOAuthClient, mocker: MockerFixture) -> None:
         """Test getting user guilds."""
-        mock_request = mocker.AsyncMock(return_value=[
-            {
-                "id": "123",
-                "name": "Test Guild 1",
-                "icon": "abc123",
-                "owner": False,
-                "permissions": 104324161,
-                "features": ["COMMUNITY", "NEWS"],
-                "banner": "def456"
-            },
-            {
-                "id": "456",
-                "name": "Test Guild 2",
-                "icon": "def456",
-                "owner": True,
-                "permissions": 104324161,
-                "features": [],
-                "banner": "xyz789"
-            }
-        ])
+        mock_request = mocker.AsyncMock(
+            return_value=[
+                {
+                    "id": "123",
+                    "name": "Test Guild 1",
+                    "icon": "abc123",
+                    "owner": False,
+                    "permissions": 104324161,
+                    "features": ["COMMUNITY", "NEWS"],
+                    "banner": "def456",
+                },
+                {
+                    "id": "456",
+                    "name": "Test Guild 2",
+                    "icon": "def456",
+                    "owner": True,
+                    "permissions": 104324161,
+                    "features": [],
+                    "banner": "xyz789",
+                },
+            ]
+        )
         mocker.patch.object(client, "request", mock_request)
 
         guilds = await client.guilds("test_token")
@@ -304,7 +297,7 @@ class TestDiscordOAuthClient:
             client_id=123456789,
             client_secret="test_secret",
             redirect_uri="http://localhost:8000/callback",
-            scopes=("identify",)
+            scopes=("identify",),
         )
 
         with pytest.raises(ScopeMissingError) as exc_info:

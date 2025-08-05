@@ -22,6 +22,7 @@ def mock_db_config(mocker: MockerFixture) -> DatabaseConfig:
     mock_config.echo = True
     return mock_config
 
+
 class TestDatabaseClient:
     def test_init_no_values(self) -> None:
         with pytest.raises(ValueError, match="Either connection_string or config must be provided"):
