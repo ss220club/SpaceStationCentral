@@ -1,11 +1,14 @@
+from datetime import timedelta
 import logging
 from collections.abc import Sequence
 
+from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
 
 from app.core.exceptions import EntityNotFoundError
+from app.core.utils import utcnow2
 from app.database.crud.player import get_player_by_id
-from app.database.models import Ban, BanHistory, BanHistoryAction
+from app.database.models import Ban, BanHistory, BanHistoryAction, BanTarget, BanType, Player
 from app.schemas.v2.ban import BanUpdateDetails, BanUpdateUnban
 
 
@@ -15,7 +18,7 @@ logger = logging.getLogger(__name__)
 # region: GET
 
 
-def get_ban(db: Session, ban_id: int) -> Ban:
+def get_ban_by_id(db: Session, ban_id: int) -> Ban:
     """Get ban by id."""
     ban = db.get(Ban, ban_id)
     if ban is None:
@@ -23,36 +26,33 @@ def get_ban(db: Session, ban_id: int) -> Ban:
     return ban
 
 
-def get_bans_by_player_discord_id(db: Session, discord_id: str) -> Sequence[Ban]:
-    selection = select(Ban).where(Ban.player.discord_id == discord_id)
-    return (db.exec(selection)).all()
-
-
-def get_bans_by_player_ckey(db: Session, ckey: str) -> Sequence[Ban]:
-    selection = select(Ban).where(Ban.player.ckey == ckey)
-    return (db.exec(selection)).all()
-
-
-def get_ban_history(db: Session, ban_id: int) -> Sequence[BanHistory]:
-    selection = select(BanHistory).where(BanHistory.ban_id == ban_id)
-    return (db.exec(selection)).all()
-
-
 # endregion
 
 
 # region: POST
-def create_ban(db: Session, ban: Ban) -> Ban:
-    # TODO: send redis event to publish the ban in discord
+def create_ban(
+    db: Session, player: Player, admin: Player, duration_days: int, reason: str, ban_targets: dict[BanType, str]
+) -> Ban:
+    ban = Ban(
+        player=player,
+        admin=admin,
+        issue_time=utcnow2(),
+        expiration_time=utcnow2() + timedelta(days=duration_days),
+        reason=reason,
+        valid=True,
+        ban_targets=[BanTarget(ban_type=ban_type, target=target) for ban_type, target in ban_targets.items()],  # pyright: ignore[reportCallIssue] # It doesnt understand that we can pass by relation instead of id
+    )
     db.add(ban)
-    db.flush()
-    db.refresh(ban)
-    logger.info("Created ban: %s", ban)
-    history = BanHistory(ban_id=ban.id, admin_id=ban.admin_id, action=BanHistoryAction.CREATE, details=ban.reason)  # pyright: ignore[reportArgumentType]
-    db.add(history)
+    ban_history = BanHistory(  # pyright: ignore[reportCallIssue] # It doesnt understand that we can pass by relation instead of id
+        ban=ban,
+        admin=admin,
+        action=BanHistoryAction.CREATE,
+    )
+    db.add(ban_history)
     db.commit()
-    db.refresh(history)
-    logger.debug("Created initial ban history: %s", history)
+    logger.info("Created ban: %s", ban)
+    # TODO: redis event to send bans to discord
+    # Could be handled at api level to use the correct schema with all the fields
     return ban
 
 
@@ -61,44 +61,49 @@ def create_ban(db: Session, ban: Ban) -> Ban:
 # region: PATCH
 
 
-def update_ban(db: Session, ban_id: int, update: BanUpdateDetails) -> Ban:
-    ban = get_ban(db, ban_id)
-    update_author = get_player_by_id(db, update.update_author_id)
-    update_data = update.model_dump(exclude_unset=True)
-    for key, value in update_data.items():
+def update_ban_by_id(db: Session, ban_id: int, update: BanUpdateDetails) -> Ban:
+    ban = get_ban_by_id(db, ban_id)
+    admin = get_player_by_id(db, update.admin_id)
+
+    update_dict = update.model_dump(exclude_unset=True, exclude={"ban_targets"})
+    for key, value in update_dict.items():
         setattr(ban, key, value)
     db.add(ban)
-    db.commit()
-    logger.info("Updated ban: %s", ban)
-    db.refresh(ban)
-    history = BanHistory(
-        ban_id=ban.id,  # pyright: ignore[reportArgumentType]
-        admin_id=update_author.id,  # pyright: ignore[reportArgumentType]
+
+    ban_history = BanHistory(  # pyright: ignore[reportCallIssue] # It doesnt understand that we can pass by relation instead of id
+        ban=ban,
+        admin=admin,
         action=BanHistoryAction.UPDATE,
-        details=update.model_dump_json(),
+        details=update.model_dump_json(exclude_unset=True),
     )
-    db.add(history)
-    db.commit()
-    logger.debug("Created ban history: %s", history)
+    db.add(ban_history)
+    try:
+        db.commit()
+    except IntegrityError as e:
+        db.rollback()
+        logger.error("Update failed. Patch: %s. Error: %s", update, e)
+        raise e
+    db.refresh(ban)
+
     return ban
 
 
-def unban(db: Session, ban_id: int, unban: BanUpdateUnban) -> Ban:
-    ban = get_ban(db, ban_id)
-    update_author = get_player_by_id(db, unban.update_author_id)
+def update_ban_unban_by_id(db: Session, ban_id: int, unban: BanUpdateUnban) -> Ban:
+    ban = get_ban_by_id(db, ban_id)
+    admin = get_player_by_id(db, unban.admin_id)
+
     ban.valid = False
     db.add(ban)
-    db.commit()
-    logger.info("Updated ban: %s", ban)
-    history = BanHistory(
-        ban_id=ban.id,  # pyright: ignore[reportArgumentType]
-        admin_id=update_author.id,  # pyright: ignore[reportArgumentType]
+
+    ban_history = BanHistory(  # pyright: ignore[reportCallIssue] # It doesnt understand that we can pass by relation instead of id
+        ban=ban,
+        admin=admin,
         action=BanHistoryAction.INVALIDATE,
         details=unban.reason,
     )
-    db.add(history)
+    db.add(ban_history)
     db.commit()
-    logger.debug("Created ban history: %s", history)
+    db.refresh(ban)
     return ban
 
 
