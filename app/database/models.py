@@ -7,11 +7,10 @@ from typing import Unpack
 from pydantic import ConfigDict
 from sqlmodel import Field, Relationship, SQLModel
 
-# Assuming this utility exists and works as intended
 from app.core.utils import utcnow2
 
 
-# --- Constants ---
+# region Constants
 
 DEFAULT_WHITELIST_EXPIRATION_TIME = timedelta(days=30)
 DEFAULT_WHITELIST_BAN_EXPIRATION_TIME = timedelta(days=14)
@@ -22,7 +21,27 @@ MAX_REASON_LENGTH = 2048
 MAX_HISTORY_DETAILS_LEN = MAX_REASON_LENGTH * 2
 
 
-# --- Base Model (DEFINITIVELY FIXED) ---
+class NoteKind(enum.Enum):
+    NOTE = "note"
+    WATCHLIST = "watchlist"
+
+
+class NoteSeverity(enum.Enum):
+    POSITIVE = "positive"
+    INFO = "info"
+    MINOR = "minor"
+    MEDIUM = "medium"
+    HIGH = "high"
+
+
+class BanHistoryAction(enum.Enum):
+    CREATE = "create"
+    UPDATE = "update"
+    INVALIDATE = "invalidate"
+
+
+# endregion
+# region Models
 
 
 class BaseSqlModel(SQLModel):
@@ -61,7 +80,10 @@ class Player(PlayerBase, table=True):
         back_populates="admin", sa_relationship_kwargs={"foreign_keys": "Ban.admin_id"}
     )
     bans_edited: list["BanHistory"] = Relationship(
-        back_populates="admin", sa_relationship_kwargs={"foreign_keys": "BanHistory.admin_id"}
+        sa_relationship_kwargs={
+            "primaryjoin": f"and_(Player.id == BanHistory.admin_id, BanHistory.action != '{BanHistoryAction.CREATE}')",
+            "viewonly": True,
+        }
     )
     notes: list["Note"] = Relationship(
         back_populates="player", sa_relationship_kwargs={"foreign_keys": "Note.player_id"}
@@ -173,19 +195,6 @@ class BanTarget(BanTargetBase, table=True):
     ban: Ban = Relationship(back_populates="ban_targets")
 
 
-class NoteKind(enum.Enum):
-    NOTE = "note"
-    WATCHLIST = "watchlist"
-
-
-class NoteSeverity(enum.Enum):
-    POSITIVE = "positive"
-    INFO = "info"
-    MINOR = "minor"
-    MEDIUM = "medium"
-    HIGH = "high"
-
-
 class NoteBase(BaseSqlModel):
     id: int | None = Field(default=None, primary_key=True)
     player_id: int = Field(foreign_key="player.id", index=True)
@@ -203,12 +212,6 @@ class Note(NoteBase, table=True):
     admin: Player = Relationship(
         back_populates="notes_issued", sa_relationship_kwargs={"foreign_keys": "[Note.admin_id]"}
     )
-
-
-class BanHistoryAction(enum.Enum):
-    CREATE = "create"
-    UPDATE = "update"
-    INVALIDATE = "invalidate"
 
 
 class BanHistoryBase(BaseSqlModel):

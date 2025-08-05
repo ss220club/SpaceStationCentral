@@ -28,6 +28,11 @@ class TestCreateEntry:
     def test_create_ban(self, db_session: Session, player: Player) -> None:
         ban = create_ban(db_session, player, player, 1, "test", {BanType.GAME: "ss13"})
 
+        assert len(player.bans) == 1
+        assert len(player.bans_issued) == 1
+        assert player.bans[0] == ban
+        assert player.bans_issued[0] == ban
+
         assert ban.player == player
         assert ban.admin == player
         assert len(ban.ban_targets) == 1
@@ -47,6 +52,9 @@ class TestCreateEntry:
             ban_targets={BanType.JOB: "janitor"},
         )
         update_ban_by_id(db_session, ban.id, update)  # pyright: ignore[reportArgumentType]
+
+        assert len(player.bans_edited) == 1
+        assert player.bans_edited[0] == ban
 
         assert len(ban.history) == 2  # First history entry is creation
         assert ban.history[1].action == BanHistoryAction.UPDATE
